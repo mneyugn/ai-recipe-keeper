@@ -98,6 +98,7 @@ export interface Database {
           module: string;
           parsed_result: Json | null;
           tokens_used: number | null;
+          generation_duration: number | null;
           user_id: string;
         };
         Insert: {
@@ -110,6 +111,7 @@ export interface Database {
           module: string;
           parsed_result?: Json | null;
           tokens_used?: number | null;
+          generation_duration?: number | null;
           user_id: string;
         };
         Update: {
@@ -122,6 +124,7 @@ export interface Database {
           module?: string;
           parsed_result?: Json | null;
           tokens_used?: number | null;
+          duration?: number | null;
           user_id?: string;
         };
         Relationships: [

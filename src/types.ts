@@ -26,7 +26,7 @@ export interface RecipeListItemDTO
   tags: string[]; // Only tag names, not full objects
 }
 
-/** 
+/**
  * DTO for the recipe list response
  * Contains an array of recipes and pagination information
  */
@@ -107,7 +107,6 @@ export interface ParseTextResponseDTO {
   parsing_log_id: string;
   parsed_data: ParsedRecipeDataDTO;
   original_text: string;
-  tokens_used: number;
 }
 
 /**
@@ -117,7 +116,6 @@ export interface ParseTextResponseDTO {
 export interface ParseUrlResponseDTO {
   parsing_log_id: string;
   parsed_data: ParsedRecipeDataDTO;
-  tokens_used: number;
 }
 
 /**

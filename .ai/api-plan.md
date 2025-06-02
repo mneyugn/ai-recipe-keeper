@@ -195,8 +195,7 @@ Parse recipe from text
     "preparation_time": "30 minutes",
     "suggested_tags": ["obiad", "makaron"]
   },
-  "original_text": "Recipe text content here...",
-  "tokens_used": 250
+  "original_text": "Recipe text content here..."
 }
 ```
 
@@ -233,8 +232,7 @@ Parse recipe from URL
     "suggested_tags": ["obiad", "makaron"],
     "image_url": "https://scraped-image-url.jpg",
     "source_url": "https://aniagotuje.pl/recipe-url"
-  },
-  "tokens_used": 350
+  }
 }
 ```
 

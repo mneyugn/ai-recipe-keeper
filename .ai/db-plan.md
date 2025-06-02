@@ -86,6 +86,7 @@ CREATE TABLE parsing_logs (
     feedback TEXT CHECK (feedback IN ('positive', 'negative')),
     feedback_timestamp TIMESTAMPTZ,
     tokens_used INTEGER,
+    generation_duration INTEGER,
     error_message TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
