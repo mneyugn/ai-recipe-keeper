@@ -40,26 +40,6 @@ Get current user profile
 - **Success codes:** 200 OK
 - **Error codes:** 401 Unauthorized
 
-#### PUT /api/users/profile
-
-Update user profile
-
-- **Request headers:** Authorization: Bearer {token}
-- **Request payload:**
-
-```json
-{
-  "username": "newusername"
-}
-```
-
-- **Response payload:** Same as GET /api/users/profile
-- **Success codes:** 200 OK
-- **Error codes:**
-  - 401 Unauthorized
-  - 400 Bad Request - Invalid data
-  - 409 Conflict - Username already taken
-
 ### Recipe Endpoints
 
 #### GET /api/recipes
@@ -312,7 +292,7 @@ List all active tags
 - **Success codes:** 200 OK
 - **Note:** Public endpoint, no authentication required
 
-### Image Upload Endpoints
+### Image upload endpoints
 
 #### POST /api/upload/recipe-image
 
@@ -339,7 +319,7 @@ Upload recipe image
 
 ## 3. Authentication and Authorization
 
-### Authentication Mechanism
+### Authentication mechanism
 
 - **Type:** JWT Bearer tokens via Supabase Auth
 - **Header format:** `Authorization: Bearer {access_token}`
@@ -369,7 +349,7 @@ Upload recipe image
 
 ## 4. Validation and Business Logic
 
-### Recipe Validation
+### Recipe validation
 
 - **name:** Required, non-empty string
 - **ingredients:** Required array, 1-50 items, max 200 characters per item
@@ -380,40 +360,40 @@ Upload recipe image
 - **notes:** Optional, max 5000 characters
 - **tag_ids:** Optional array of valid tag UUIDs
 
-### Text Parsing Validation
+### Text parsing validation
 
 - **text:** Required, max 10000 characters
 - Daily limit check before processing (100 per user per day)
 - Increment counter after successful parsing
 
-### URL Parsing Validation
+### URL parsing validation
 
 - **url:** Required, must be from aniagotuje.pl or kwestiasmaku.com
 - Daily limit check before processing
 - Validate URL format and domain
 - Handle scraper failures gracefully
 
-### User Registration Validation
+### User registration validation
 
 - **email:** Required, valid email format, unique
 - **username:** Required, 3-50 characters, alphanumeric + underscore, unique
 - **password:** Required, minimum 8 characters
 
-### Feedback Validation
+### Feedback validation
 
 - **feedback:** Must be either 'positive' or 'negative'
 - Can only provide feedback for own parsing logs
 - Can only provide feedback once per parsing log
 
-### Business Logic Implementation
+### Business logic implementation
 
-#### Daily Parsing Limits
+#### Daily parsing limits
 
 - Check limit using `check_parsing_limit(user_id)` database function
 - Return 429 if limit exceeded
 - Increment counter using `increment_parsing_count(user_id)` after successful parsing
 
-#### Recipe Source Tracking
+#### Recipe source tracking
 
 - Automatically set source_type based on creation method:
   - 'manual' for direct recipe creation
@@ -421,7 +401,7 @@ Upload recipe image
   - 'url' for URL import
 - Preserve original URL for imported recipes
 
-#### Image Handling
+#### Image handling
 
 - Store images in Supabase Storage bucket: `recipe-images`
 - Path format: `user_id/{user_id}/{uuid}/{filename}`
@@ -429,13 +409,13 @@ Upload recipe image
 - Validate file types: jpg, jpeg, png, webp
 - Max file size: 5MB
 
-#### Tag Management
+#### Tag management
 
 - Only predefined tags can be assigned
 - Tags must be active (`is_active = true`)
 - Validate tag IDs exist before assignment
 
-#### Error Response Format
+#### Error response format
 
 ```json
 {
