@@ -26,7 +26,7 @@ A modern web application for digitizing, storing, and managing culinary recipes 
 
 ## Project Description
 
-AI RecipeKeeper is designed to streamline the process of digitizing and organizing culinary recipes. The application leverages LLMs to automatically parse and structure recipe data from text inputs and supported cooking websites, significantly reducing the time users spend manually transcribing recipes.
+AI RecipeKeeper is designed to streamline the process of digitizing and organizing culinary recipes. The application leverages LLMs to automatically extract and structure recipe data from text inputs and supported cooking websites, significantly reducing the time users spend manually transcribing recipes.
 
 ### Key Features
 

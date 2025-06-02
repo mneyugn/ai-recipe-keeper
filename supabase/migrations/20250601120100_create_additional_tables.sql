@@ -1,26 +1,27 @@
 -- Migration: Create additional tables for AI Recipe Keeper
--- Purpose: Add support tables for parsing logs, collections, and rate limiting
--- Tables affected: parsing_logs, collections, recipe_collections, daily_parsing_limits
--- Notes: These tables support advanced features like AI parsing tracking and recipe organization
+-- Purpose: Add support tables for extraction logs, collections, and rate limiting
+-- Tables affected: extraction_logs, collections, recipe_collections, daily_extraction_limits
+-- Notes: These tables support advanced features like AI extraction tracking and recipe organization
 
--- create parsing_logs table
--- tracks ai parsing attempts for monitoring and rate limiting
+-- create extraction_logs table
+-- tracks ai extraction attempts for monitoring and rate limiting
 -- includes token usage and error tracking for debugging
-create table parsing_logs (
+create table extraction_logs (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references users(id) on delete cascade,
     module text not null check (module in ('text', 'url')),
     input_data text not null,
-    parsed_result jsonb,
+    extraction_result jsonb,
     feedback text check (feedback in ('positive', 'negative')),
     feedback_timestamp timestamptz,
     tokens_used integer,
+    generation_duration integer,
     error_message text,
     created_at timestamptz default now() not null
 );
 
--- enable row level security for parsing_logs table
-alter table parsing_logs enable row level security;
+-- enable row level security for extraction_logs table
+alter table extraction_logs enable row level security;
 
 -- create collections table
 -- allows users to organize recipes into custom collections
@@ -53,17 +54,17 @@ create table recipe_collections (
 -- enable row level security for recipe_collections table
 alter table recipe_collections enable row level security;
 
--- create daily_parsing_limits table
--- enforces daily limits on ai parsing to control costs
+-- create daily_extraction_limits table
+-- enforces daily limits on ai extraction to control costs
 -- automatically resets daily with date-based primary key
-create table daily_parsing_limits (
+create table daily_extraction_limits (
     user_id uuid not null references users(id) on delete cascade,
     date date not null default current_date,
     count integer not null default 0,
     primary key (user_id, date),
-    -- enforce maximum daily parsing limit of 100 requests
-    constraint max_daily_parsing check (count <= 100)
+    -- enforce maximum daily extraction limit of 100 requests
+    constraint max_daily_extraction check (count <= 100)
 );
 
--- enable row level security for daily_parsing_limits table
-alter table daily_parsing_limits enable row level security; 
+-- enable row level security for daily_extraction_limits table
+alter table daily_extraction_limits enable row level security; 

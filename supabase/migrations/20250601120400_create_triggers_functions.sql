@@ -1,6 +1,6 @@
 -- Migration: Create triggers and functions for AI Recipe Keeper
--- Purpose: Add automated functionality for timestamp updates, user creation, and parsing limits
--- Functions created: update_updated_at_column, handle_new_user, check_parsing_limit, increment_parsing_count, clean_old_parsing_logs, validate_recipe_data
+-- Purpose: Add automated functionality for timestamp updates, user creation, and extraction limits
+-- Functions created: update_updated_at_column, handle_new_user, check_extraction_limit, increment_extraction_count, clean_old_extraction_logs, validate_recipe_data
 -- Triggers created: Auto-update timestamps, auto-create user profiles, recipe validation
 -- Notes: These functions automate common operations and enforce business rules
 
@@ -81,22 +81,22 @@ create trigger on_auth_user_created
     after insert on auth.users
     for each row execute function handle_new_user();
 
--- function to check daily parsing limit for a user
+-- function to check daily extraction limit for a user
 -- returns true if user is under daily limit, false otherwise
 -- automatically creates limit record if it doesn't exist
-create or replace function check_parsing_limit(p_user_id uuid)
+create or replace function check_extraction_limit(p_user_id uuid)
 returns boolean as $$
 declare
     current_count integer;
 begin
     -- create record for today if it doesn't exist
-    insert into daily_parsing_limits (user_id, date, count)
+    insert into daily_extraction_limits (user_id, date, count)
     values (p_user_id, current_date, 0)
     on conflict (user_id, date) do nothing;
 
     -- get current count for today
     select count into current_count
-    from daily_parsing_limits
+    from daily_extraction_limits
     where user_id = p_user_id and date = current_date;
 
     -- return true if under limit (100 requests per day)
@@ -104,25 +104,25 @@ begin
 end;
 $$ language 'plpgsql' security definer;
 
--- function to increment parsing count for a user
--- this should be called after successful parsing request
+-- function to increment extraction count for a user
+-- this should be called after successful extraction request
 -- updates the daily counter for rate limiting
-create or replace function increment_parsing_count(p_user_id uuid)
+create or replace function increment_extraction_count(p_user_id uuid)
 returns void as $$
 begin
-    update daily_parsing_limits
+    update daily_extraction_limits
     set count = count + 1
     where user_id = p_user_id and date = current_date;
 end;
 $$ language 'plpgsql' security definer;
 
--- function to clean old parsing logs (older than 30 days)
+-- function to clean old extraction logs (older than 30 days)
 -- this helps manage database size and removes old log data
 -- should be called periodically via pg_cron or external scheduler
-create or replace function clean_old_parsing_logs()
+create or replace function clean_old_extraction_logs()
 returns void as $$
 begin
-    delete from parsing_logs
+    delete from extraction_logs
     where created_at < now() - interval '30 days';
 end;
 $$ language 'plpgsql'; 

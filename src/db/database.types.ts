@@ -61,7 +61,7 @@ export interface Database {
           },
         ];
       };
-      daily_parsing_limits: {
+      daily_extraction_limits: {
         Row: {
           count: number;
           date: string;
@@ -79,7 +79,7 @@ export interface Database {
         };
         Relationships: [
           {
-            foreignKeyName: "daily_parsing_limits_user_id_fkey";
+            foreignKeyName: "daily_extraction_limits_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
@@ -87,7 +87,7 @@ export interface Database {
           },
         ];
       };
-      parsing_logs: {
+      extraction_logs: {
         Row: {
           created_at: string;
           error_message: string | null;
@@ -96,7 +96,7 @@ export interface Database {
           id: string;
           input_data: string;
           module: string;
-          parsed_result: Json | null;
+          extraction_result: Json | null;
           tokens_used: number | null;
           generation_duration: number | null;
           user_id: string;
@@ -109,7 +109,7 @@ export interface Database {
           id?: string;
           input_data: string;
           module: string;
-          parsed_result?: Json | null;
+          extraction_result?: Json | null;
           tokens_used?: number | null;
           generation_duration?: number | null;
           user_id: string;
@@ -122,14 +122,14 @@ export interface Database {
           id?: string;
           input_data?: string;
           module?: string;
-          parsed_result?: Json | null;
+          extraction_result?: Json | null;
           tokens_used?: number | null;
           duration?: number | null;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "parsing_logs_user_id_fkey";
+            foreignKeyName: "extraction_logs_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "users";
@@ -329,15 +329,15 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
-      check_parsing_limit: {
+      check_extraction_limit: {
         Args: { p_user_id: string };
         Returns: boolean;
       };
-      clean_old_parsing_logs: {
+      clean_old_extraction_logs: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
-      increment_parsing_count: {
+      increment_extraction_count: {
         Args: { p_user_id: string };
         Returns: undefined;
       };

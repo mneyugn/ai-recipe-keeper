@@ -1,6 +1,6 @@
 -- Migration: Create RLS policies for AI Recipe Keeper
 -- Purpose: Establish comprehensive row level security policies for data access control
--- Tables affected: All tables (users, recipes, tags, recipe_tags, parsing_logs, collections, recipe_collections, daily_parsing_limits)
+-- Tables affected: All tables (users, recipes, tags, recipe_tags, extraction_logs, collections, recipe_collections, daily_extraction_limits)
 -- Notes: These policies ensure users can only access their own data, with special provisions for admins and public data
 
 -- rls policies for users table
@@ -55,13 +55,13 @@ create policy recipe_tags_delete_own on recipe_tags
         )
     );
 
--- rls policies for parsing_logs table
+-- rls policies for extraction_logs table
 -- users can insert their own logs, only admins can read logs
 -- this protects user privacy while allowing admin monitoring
-create policy parsing_logs_insert_own on parsing_logs
+create policy extraction_logs_insert_own on extraction_logs
     for insert with check (auth.uid() = user_id);
 
-create policy parsing_logs_select_admin on parsing_logs
+create policy extraction_logs_select_admin on extraction_logs
     for select using (
         exists (
             select 1 from users
@@ -119,15 +119,15 @@ create policy recipe_collections_delete_own on recipe_collections
         )
     );
 
--- rls policies for daily_parsing_limits table
--- users can access their own parsing limit data only
-create policy daily_parsing_limits_select_own on daily_parsing_limits
+-- rls policies for daily_extraction_limits table
+-- users can access their own extraction limit data only
+create policy daily_extraction_limits_select_own on daily_extraction_limits
     for select using (auth.uid() = user_id);
 
-create policy daily_parsing_limits_insert_own on daily_parsing_limits
+create policy daily_extraction_limits_insert_own on daily_extraction_limits
     for insert with check (auth.uid() = user_id);
 
-create policy daily_parsing_limits_update_own on daily_parsing_limits
+create policy daily_extraction_limits_update_own on daily_extraction_limits
     for update using (auth.uid() = user_id);
 
 -- rls policy for tags table

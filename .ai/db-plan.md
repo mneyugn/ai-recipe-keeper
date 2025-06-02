@@ -74,10 +74,10 @@ CREATE TABLE recipe_tags (
 );
 ```
 
-### parsing_logs
+### extraction_logs
 
 ```sql
-CREATE TABLE parsing_logs (
+CREATE TABLE extraction_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     module TEXT NOT NULL CHECK (module IN ('text', 'url')),
@@ -119,15 +119,15 @@ CREATE TABLE recipe_collections (
 );
 ```
 
-### daily_parsing_limits
+### daily_extraction_limits
 
 ```sql
-CREATE TABLE daily_parsing_limits (
+CREATE TABLE daily_extraction_limits (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     count INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, date),
-    CONSTRAINT max_daily_parsing CHECK (count <= 100)
+    CONSTRAINT max_daily_extraction CHECK (count <= 100)
 );
 ```
 
@@ -135,10 +135,10 @@ CREATE TABLE daily_parsing_limits (
 
 - **users → recipes**: One-to-Many (jeden użytkownik może mieć wiele przepisów)
 - **recipes → recipe_tags → tags**: Many-to-Many (przepis może mieć wiele tagów, tag może być przypisany do wielu przepisów)
-- **users → parsing_logs**: One-to-Many (jeden użytkownik może mieć wiele logów parsowania)
+- **users → extraction_logs**: One-to-Many (jeden użytkownik może mieć wiele logów ekstrakcji)
 - **users → collections**: One-to-Many (jeden użytkownik może mieć wiele kolekcji)
 - **recipes → recipe_collections → collections**: Many-to-Many (przepis może należeć do wielu kolekcji, kolekcja może zawierać wiele przepisów)
-- **users → daily_parsing_limits**: One-to-Many (śledzenie dziennych limitów per użytkownik)
+- **users → daily_extraction_limits**: One-to-Many (śledzenie dziennych limitów per użytkownik)
 
 ## 3. Indeksy
 
@@ -155,9 +155,9 @@ CREATE INDEX idx_tags_is_active ON tags(is_active);
 -- Indeksy dla recipe_tags
 CREATE INDEX idx_recipe_tags_tag_id ON recipe_tags(tag_id);
 
--- Indeksy dla parsing_logs
-CREATE INDEX idx_parsing_logs_user_id_created_at ON parsing_logs(user_id, created_at DESC);
-CREATE INDEX idx_parsing_logs_created_at ON parsing_logs(created_at);
+-- Indeksy dla extraction_logs
+CREATE INDEX idx_extraction_logs_user_id_created_at ON extraction_logs(user_id, created_at DESC);
+CREATE INDEX idx_extraction_logs_created_at ON extraction_logs(created_at);
 
 -- Indeksy dla collections
 CREATE INDEX idx_collections_user_id ON collections(user_id);
@@ -165,8 +165,8 @@ CREATE INDEX idx_collections_user_id ON collections(user_id);
 -- Indeksy dla recipe_collections
 CREATE INDEX idx_recipe_collections_collection_id ON recipe_collections(collection_id);
 
--- Indeksy dla daily_parsing_limits
-CREATE INDEX idx_daily_parsing_limits_date ON daily_parsing_limits(date);
+-- Indeksy dla daily_extraction_limits
+CREATE INDEX idx_daily_extraction_limits_date ON daily_extraction_limits(date);
 ```
 
 ## 4. Zasady PostgreSQL Row Level Security (RLS)
@@ -176,10 +176,10 @@ CREATE INDEX idx_daily_parsing_limits_date ON daily_parsing_limits(date);
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_tags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE parsing_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extraction_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_collections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE daily_parsing_limits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_extraction_limits ENABLE ROW LEVEL SECURITY;
 
 -- Polityki dla users
 CREATE POLICY users_select_own ON users
@@ -229,11 +229,11 @@ CREATE POLICY recipe_tags_delete_own ON recipe_tags
         )
     );
 
--- Polityki dla parsing_logs (tylko administratorzy mogą czytać)
-CREATE POLICY parsing_logs_insert_own ON parsing_logs
+-- Polityki dla extraction_logs (tylko administratorzy mogą czytać)
+CREATE POLICY extraction_logs_insert_own ON extraction_logs
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY parsing_logs_select_admin ON parsing_logs
+CREATE POLICY extraction_logs_select_admin ON extraction_logs
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM users
@@ -288,14 +288,14 @@ CREATE POLICY recipe_collections_delete_own ON recipe_collections
         )
     );
 
--- Polityki dla daily_parsing_limits
-CREATE POLICY daily_parsing_limits_select_own ON daily_parsing_limits
+-- Polityki dla daily_extraction_limits
+CREATE POLICY daily_extraction_limits_select_own ON daily_extraction_limits
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY daily_parsing_limits_insert_own ON daily_parsing_limits
+CREATE POLICY daily_extraction_limits_insert_own ON daily_extraction_limits
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY daily_parsing_limits_update_own ON daily_parsing_limits
+CREATE POLICY daily_extraction_limits_update_own ON daily_extraction_limits
     FOR UPDATE USING (auth.uid() = user_id);
 
 -- Polityka dla tags (publiczny odczyt)
@@ -343,11 +343,11 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
--- Funkcja do czyszczenia starych logów parsowania (>30 dni)
-CREATE OR REPLACE FUNCTION clean_old_parsing_logs()
+-- Funkcja do czyszczenia starych logów ekstrakcji (>30 dni)
+CREATE OR REPLACE FUNCTION clean_old_extraction_logs()
 RETURNS void AS $$
 BEGIN
-    DELETE FROM parsing_logs
+    DELETE FROM extraction_logs
     WHERE created_at < NOW() - INTERVAL '30 days';
 END;
 $$ language 'plpgsql';
@@ -356,31 +356,31 @@ $$ language 'plpgsql';
 ### Funkcje pomocnicze
 
 ```sql
--- Funkcja do sprawdzania dziennego limitu parsowania
-CREATE OR REPLACE FUNCTION check_parsing_limit(p_user_id UUID)
+-- Funkcja do sprawdzania dziennego limitu ekstrakcji
+CREATE OR REPLACE FUNCTION check_extraction_limit(p_user_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
     current_count INTEGER;
 BEGIN
     -- Utwórz rekord jeśli nie istnieje
-    INSERT INTO daily_parsing_limits (user_id, date, count)
+    INSERT INTO daily_extraction_limits (user_id, date, count)
     VALUES (p_user_id, CURRENT_DATE, 0)
     ON CONFLICT (user_id, date) DO NOTHING;
 
     -- Pobierz aktualną liczbę
     SELECT count INTO current_count
-    FROM daily_parsing_limits
+    FROM daily_extraction_limits
     WHERE user_id = p_user_id AND date = CURRENT_DATE;
 
     RETURN current_count < 100;
 END;
 $$ language 'plpgsql' SECURITY DEFINER;
 
--- Funkcja do inkrementacji licznika parsowania
-CREATE OR REPLACE FUNCTION increment_parsing_count(p_user_id UUID)
+-- Funkcja do inkrementacji licznika ekstrakcji
+CREATE OR REPLACE FUNCTION increment_extraction_count(p_user_id UUID)
 RETURNS void AS $$
 BEGIN
-    UPDATE daily_parsing_limits
+    UPDATE daily_extraction_limits
     SET count = count + 1
     WHERE user_id = p_user_id AND date = CURRENT_DATE;
 END;
@@ -441,4 +441,4 @@ INSERT INTO tags (name, slug) VALUES
 
 7. **Przygotowanie na kolekcje** - Struktura tabel collections i recipe_collections jest gotowa na przyszłe funkcje współdzielenia.
 
-8. **Automatyczne czyszczenie logów** - Wymaga konfiguracji pg_cron w Supabase dla regularnego wywoływania clean_old_parsing_logs().
+8. **Automatyczne czyszczenie logów** - Wymaga konfiguracji pg_cron w Supabase dla regularnego wywoływania clean_old_extraction_logs().

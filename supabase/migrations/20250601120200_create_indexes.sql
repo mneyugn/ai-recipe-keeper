@@ -1,6 +1,6 @@
 -- Migration: Create indexes for AI Recipe Keeper
 -- Purpose: Add performance indexes for all tables to optimize common queries
--- Tables affected: recipes, tags, recipe_tags, parsing_logs, collections, recipe_collections, daily_parsing_limits
+-- Tables affected: recipes, tags, recipe_tags, extraction_logs, collections, recipe_collections, daily_extraction_limits
 -- Notes: These indexes optimize user-specific queries, lookups, and admin operations
 
 -- indexes for recipes table
@@ -25,12 +25,12 @@ create index idx_tags_is_active on tags(is_active);
 -- optimizes reverse lookups from tags to recipes
 create index idx_recipe_tags_tag_id on recipe_tags(tag_id);
 
--- indexes for parsing_logs table
--- optimizes user's parsing history ordered by date
-create index idx_parsing_logs_user_id_created_at on parsing_logs(user_id, created_at desc);
+-- indexes for extraction_logs table
+-- optimizes user's extraction history ordered by date
+create index idx_extraction_logs_user_id_created_at on extraction_logs(user_id, created_at desc);
 
 -- optimizes admin queries and log cleanup operations
-create index idx_parsing_logs_created_at on parsing_logs(created_at);
+create index idx_extraction_logs_created_at on extraction_logs(created_at);
 
 -- indexes for collections table
 -- optimizes user's collections listing
@@ -40,6 +40,6 @@ create index idx_collections_user_id on collections(user_id);
 -- optimizes collection content queries
 create index idx_recipe_collections_collection_id on recipe_collections(collection_id);
 
--- indexes for daily_parsing_limits table
+-- indexes for daily_extraction_limits table
 -- optimizes date-based limit queries
-create index idx_daily_parsing_limits_date on daily_parsing_limits(date); 
+create index idx_daily_extraction_limits_date on daily_extraction_limits(date); 

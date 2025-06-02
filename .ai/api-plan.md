@@ -6,7 +6,7 @@
 - **Recipes** → `recipes` table
 - **Tags** → `tags` table
 - **Recipe Tags** → `recipe_tags` table
-- **Parsing** → `parsing_logs` table
+- **Recipe Extraction** → `extraction_logs` table
 - **Collections** → `collections` table (prepared for future features)
 - **Recipe Collections** → `recipe_collections` table (prepared for future features)
 
@@ -29,7 +29,7 @@ Get current user profile
   "is_admin": false,
   "created_at": "2024-01-15T10:00:00Z",
   "recipe_count": 42,
-  "parsing_limit": {
+  "extraction_limit": {
     "used": 5,
     "limit": 100,
     "date": "2024-01-15"
@@ -168,11 +168,11 @@ Delete recipe
   - 401 Unauthorized
   - 404 Not Found
 
-### Parsing Endpoints
+### Recipe Extraction Endpoints
 
-#### POST /api/parsing/text
+#### POST /api/recipe/extract-from-text
 
-Parse recipe from text
+Extract recipe from text
 
 - **Request headers:** Authorization: Bearer {token}
 - **Request payload:**
@@ -187,8 +187,8 @@ Parse recipe from text
 
 ```json
 {
-  "parsing_log_id": "uuid",
-  "parsed_data": {
+  "extraction_log_id": "uuid",
+  "extracted_data": {
     "name": "Detected Recipe Name",
     "ingredients": ["ingredient 1", "ingredient 2"],
     "steps": ["step 1", "step 2"],
@@ -204,11 +204,11 @@ Parse recipe from text
   - 401 Unauthorized
   - 400 Bad Request - Text too long (>10000 chars)
   - 429 Too Many Requests - Daily limit exceeded
-  - 422 Unprocessable Entity - Could not parse recipe
+  - 422 Unprocessable Entity - Could not extract recipe
 
-#### POST /api/parsing/url
+#### POST /api/recipe/extract-from-url
 
-Parse recipe from URL
+Extract recipe from URL
 
 - **Request headers:** Authorization: Bearer {token}
 - **Request payload:**
@@ -223,8 +223,8 @@ Parse recipe from URL
 
 ```json
 {
-  "parsing_log_id": "uuid",
-  "parsed_data": {
+  "extraction_log_id": "uuid",
+  "extracted_data": {
     "name": "Detected Recipe Name",
     "ingredients": ["ingredient 1", "ingredient 2"],
     "steps": ["step 1", "step 2"],
@@ -241,11 +241,11 @@ Parse recipe from URL
   - 401 Unauthorized
   - 400 Bad Request - Invalid or unsupported URL
   - 429 Too Many Requests - Daily limit exceeded
-  - 422 Unprocessable Entity - Scraping or parsing failed
+  - 422 Unprocessable Entity - Scraping or extraction failed
 
-#### POST /api/parsing/{logId}/feedback
+#### POST /api/recipe/extraction/{logId}/feedback
 
-Submit parsing feedback
+Submit extraction feedback
 
 - **Request headers:** Authorization: Bearer {token}
 - **Request payload:**
@@ -259,7 +259,7 @@ Submit parsing feedback
 - **Success codes:** 204 No Content
 - **Error codes:**
   - 401 Unauthorized
-  - 404 Not Found - Parsing log not found
+  - 404 Not Found - Extraction log not found
   - 400 Bad Request - Invalid feedback value
 
 ### Tag Endpoints
@@ -335,7 +335,7 @@ Upload recipe image
 
 - All recipe endpoints require authentication
 - Users can only access their own recipes (enforced by RLS)
-- Parsing endpoints require authentication and check daily limits
+- Recipe extraction endpoints require authentication and check daily limits
 - Tags endpoint is public (read-only)
 - Admin-only endpoints are not exposed in MVP
 
@@ -358,13 +358,13 @@ Upload recipe image
 - **notes:** Optional, max 5000 characters
 - **tag_ids:** Optional array of valid tag UUIDs
 
-### Text parsing validation
+### Text extraction validation
 
 - **text:** Required, max 10000 characters
 - Daily limit check before processing (100 per user per day)
-- Increment counter after successful parsing
+- Increment counter after successful extraction
 
-### URL parsing validation
+### URL extraction validation
 
 - **url:** Required, must be from aniagotuje.pl or kwestiasmaku.com
 - Daily limit check before processing
@@ -380,22 +380,22 @@ Upload recipe image
 ### Feedback validation
 
 - **feedback:** Must be either 'positive' or 'negative'
-- Can only provide feedback for own parsing logs
-- Can only provide feedback once per parsing log
+- Can only provide feedback for own extraction logs
+- Can only provide feedback once per extraction log
 
 ### Business logic implementation
 
-#### Daily parsing limits
+#### Daily extraction limits
 
-- Check limit using `check_parsing_limit(user_id)` database function
+- Check limit using `check_extraction_limit(user_id)` database function
 - Return 429 if limit exceeded
-- Increment counter using `increment_parsing_count(user_id)` after successful parsing
+- Increment counter using `increment_extraction_count(user_id)` after successful extraction
 
 #### Recipe source tracking
 
 - Automatically set source_type based on creation method:
   - 'manual' for direct recipe creation
-  - 'text' for text parsing
+  - 'text' for text extraction
   - 'url' for URL import
 - Preserve original URL for imported recipes
 

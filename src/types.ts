@@ -4,11 +4,11 @@ import type { Tables } from "./db/database.types";
 
 /**
  * DTO for the user profile returned by GET /api/users/profile
- * Extends data from the users table with additional information (number of recipes, parsing limits)
+ * Extends data from the users table with additional information (number of recipes, extraction limits)
  */
 export interface UserProfileDTO extends Pick<Tables<"users">, "id" | "email" | "username" | "is_admin" | "created_at"> {
   recipe_count: number;
-  parsing_limit: {
+  extraction_limit: {
     used: number;
     limit: number;
     date: string;
@@ -67,62 +67,62 @@ export interface CreateRecipeCommand {
  */
 export type UpdateRecipeCommand = CreateRecipeCommand;
 
-// ===== Parsing DTOs and Commands =====
+// ===== Recipe Extraction DTOs and Commands =====
 
 /**
- * Command model for parsing text
- * Used in POST /api/parsing/text
+ * Command model for extracting recipe from text
+ * Used in POST /api/recipe/extract-from-text
  */
-export interface ParseTextCommand {
+export interface ExtractFromTextCommand {
   text: string;
 }
 
 /**
- * Command model for parsing URL
- * Used in POST /api/parsing/url
+ * Command model for extracting recipe from URL
+ * Used in POST /api/recipe/extract-from-url
  */
-export interface ParseUrlCommand {
+export interface ExtractFromUrlCommand {
   url: string;
 }
 
 /**
- * DTO for parsed recipe data
- * Part of the response payload for parsing endpoints
+ * DTO for extracted recipe data
+ * Part of the response payload for extraction endpoints
  */
-export interface ParsedRecipeDataDTO {
+export interface ExtractedRecipeDataDTO {
   name: string;
   ingredients: string[];
   steps: string[];
   preparation_time?: string;
   suggested_tags: string[]; // Suggested tags as slugs
-  image_url?: string; // Only for URL parsing
-  source_url?: string; // Only for URL parsing
+  image_url?: string; // Only for URL extraction
+  source_url?: string; // Only for URL extraction
 }
 
 /**
- * DTO for text parsing response
- * Returned by POST /api/parsing/text
+ * DTO for text extraction response
+ * Returned by POST /api/recipe/extract-from-text
  */
-export interface ParseTextResponseDTO {
-  parsing_log_id: string;
-  parsed_data: ParsedRecipeDataDTO;
+export interface ExtractFromTextResponseDTO {
+  extraction_log_id: string;
+  extracted_data: ExtractedRecipeDataDTO;
   original_text: string;
 }
 
 /**
- * DTO for URL parsing response
- * Returned by POST /api/parsing/url
+ * DTO for URL extraction response
+ * Returned by POST /api/recipe/extract-from-url
  */
-export interface ParseUrlResponseDTO {
-  parsing_log_id: string;
-  parsed_data: ParsedRecipeDataDTO;
+export interface ExtractFromUrlResponseDTO {
+  extraction_log_id: string;
+  extracted_data: ExtractedRecipeDataDTO;
 }
 
 /**
- * Command model for parsing feedback
- * Used in POST /api/parsing/{logId}/feedback
+ * Command model for extraction feedback
+ * Used in POST /api/recipe/extraction/{logId}/feedback
  */
-export interface ParseFeedbackCommand {
+export interface ExtractionFeedbackCommand {
   feedback: "positive" | "negative";
 }
 
