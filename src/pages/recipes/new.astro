@@ -1,0 +1,19 @@
+---
+import MainLayout from "@/layouts/Layout.astro";
+import RecipeForm from "@/components/RecipeForm.tsx";
+// TODO: Import UserProfileDTO and check if user is authenticated
+// TODO: Redirect to login if not authenticated
+
+// const user = Astro.locals.user;
+
+// if (!user) {
+//   return Astro.redirect("/signin");
+// }
+---
+
+<MainLayout title="Dodaj nowy przepis">
+  <div class="container mx-auto py-8">
+    <h1 class="text-3xl font-bold mb-6">Dodaj nowy przepis</h1>
+    <RecipeForm client:load mode="new" />
+  </div>
+</MainLayout>
