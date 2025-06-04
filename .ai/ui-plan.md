@@ -4,7 +4,7 @@
 
 Architektura UI dla AI RecipeKeeper została zaprojektowana z myślą o nowoczesności, minimalizmie i efektywności, opierając się na tech stacku: Astro, React, TypeScript, Tailwind CSS oraz bibliotece komponentów Shadcn/ui. Głównym celem jest zapewnienie intuicyjnego interfejsu do digitalizacji, zarządzania i przeglądania przepisów kulinarnych, z silnym naciskiem na funkcje wspierane przez AI.
 
-Interfejs użytkownika będzie składał się z publicznie dostępnych stron autoryzacyjnych (logowanie, rejestracja, reset hasła) oraz chronionych widoków dostępnych po zalogowaniu. Chronione widoki obejmują zarządzanie przepisami (galeria/lista, szczegóły, formularz dodawania/edycji z trybami importu AI) oraz profil użytkownika. Nawigacja będzie prosta i klarowna, umożliwiając łatwy dostęp do kluczowych funkcji przez sidebar po lewej stronie. Zarządzanie stanem będzie realizowane głównie lokalnie w komponentach React, z możliwym użyciem React Context API dla danych globalnych. Komunikacja z backendem odbywać się będzie poprzez REST API, zgodnie z dostarczonym planem API.
+Interfejs użytkownika będzie składał się z publicznie dostępnych stron autoryzacyjnych (logowanie, rejestracja, reset hasła) oraz chronionych widoków dostępnych po zalogowaniu. Chronione widoki obejmują zarządzanie przepisami (galeria/lista, szczegóły, formularz dodawania/edycji z trybami importu AI) oraz profil użytkownika. Nawigacja będzie prosta i klarowna, umożliwiając łatwy dostęp do kluczowych funkcji przez sidebar po lewej stronie. Komunikacja z backendem odbywać się będzie poprzez REST API, zgodnie z dostarczonym planem API.
 
 ## 2. Lista widoków
 
