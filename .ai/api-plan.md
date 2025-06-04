@@ -51,7 +51,7 @@ List user's recipes
   - `page` (integer, default: 1)
   - `limit` (integer, default: 20, max: 100)
   - `sort` (string, default: "created_at:desc", options: "created_at:asc", "created_at:desc", "name:asc", "name:desc")
-  - `tag` (string, optional) - Filter by tag slug
+  - `tags` (string, optional) - Filter by comma-separated tag slugs (e.g., "obiad,makaron")
 - **Response payload:**
 
 ```json
@@ -230,7 +230,7 @@ Extract recipe from URL
     "steps": ["step 1", "step 2"],
     "preparation_time": "30 minutes",
     "suggested_tags": ["obiad", "makaron"],
-    "image_url": "https://scraped-image-url.jpg",
+    "image_url": "https://your-app-storage.url/user_id/image_hash.jpg",
     "source_url": "https://aniagotuje.pl/recipe-url"
   }
 }
@@ -276,12 +276,14 @@ List all active tags
     {
       "id": "uuid",
       "name": "Śniadanie",
-      "slug": "sniadanie"
+      "slug": "sniadanie",
+      "color_hex": "#FFD700"
     },
     {
       "id": "uuid",
       "name": "Obiad",
-      "slug": "obiad"
+      "slug": "obiad",
+      "color_hex": "#FF8C00"
     }
   ]
 }

@@ -34,11 +34,11 @@ Główne typy przepisów, które użytkownicy chcą digitalizować, to:
 ### 3.2. Import przepisu z URL (aniagotuje.pl, kwestiasmaku.com)
 
 - Użytkownik może wkleić link URL do przepisu z predefiniowanych stron: aniagotuje.pl lub kwestiasmaku.com.
-- System wykorzystuje dedykowany scraper dla każdej z tych stron do pobrania kluczowych treści przepisu oraz linku do głównego zdjęcia potrawy.
+- System wykorzystuje dedykowany scraper dla każdej z tych stron do pobrania kluczowych treści przepisu oraz linku do głównego zdjęcia potrawy. Backend następnie pobiera ten obrazek i zapisuje go, udostępniając wewnętrzny URL do niego w ramach danych przepisu.
   - Scraper próbuje przekształcić odpowiedni fragment HTML na format Markdown.
   - Scraper próbuje odfiltrować treści niebędące częścią przepisu (np. reklamy, komentarze) na etapie przetwarzania HTML, jeśli to możliwe.
 - Pobrana treść (w formacie Markdown) jest następnie przekazywana do modułu LLM w celu szczegółowej strukturyzacji danych (analogicznie jak przy wklejonym tekście: nazwa, składniki, kroki, tagi, czas przygotowania).
-- Pole "Źródło" przepisu jest automatycznie wypełniane adresem URL.
+- Pole "Źródło" przepisu jest automatycznie wypełniane adresem URL. Pobranie i zapisanie obrazka odbywa się po stronie serwera.
 - W przypadku problemów z działaniem scrapera dla danej strony (np. z powodu zmian w strukturze HTML strony źródłowej wykraczających poza podstawową odporność scrapera), użytkownik otrzymuje stosowny komunikat. Nie zakłada się ciągłego, aktywnego utrzymania scraperów w ramach MVP.
 
 ### 3.3. Weryfikacja i edycja sparsowanych/zaimportowanych danych
@@ -48,12 +48,13 @@ Główne typy przepisów, które użytkownicy chcą digitalizować, to:
   - Nazwa potrawy (pole tekstowe).
   - Składniki (każdy składnik jako osobne, edytowalne pole tekstowe).
   - Kroki przygotowania (każdy krok jako osobne pole tekstowe typu `textarea` z obsługą nowych linii).
-  - Sugerowane tagi (możliwość usunięcia/dodania z predefiniowanej listy).
+  - Tagi (możliwość wyboru wielu tagów z predefiniowanej listy).
   - Czas przygotowania (pole tekstowe).
   - Źródło (pole tekstowe, domyślnie wypełnione dla URL, "Manual" dla ręcznych).
+  - Notatki (pole tekstowe typu `textarea` na dodatkowe uwagi użytkownika).
 - Użytkownik może dokonać niezbędnych korekt i uzupełnień przed finalnym zapisaniem przepisu.
 - Zaimplementowana jest podstawowa walidacja danych formularza (np. obecność nazwy, co najmniej jednego składnika i jednego kroku).
-- Możliwość przywrócenia oryginalnego, surowego tekstu wklejonego przez użytkownika (tylko dla opcji wklejania tekstu) na etapie weryfikacji, przed zapisaniem.
+- Możliwość przywrócenia oryginalnego, surowego tekstu wklejonego przez użytkownika (tylko dla opcji wklejania tekstu) na etapie weryfikacji, przed zapisaniem. Użytkownik może wyświetlić i edytować ten oryginalny tekst. Dostępna jest również opcja ponownego przetworzenia zmodyfikowanego oryginalnego tekstu, po uprzednim wyświetleniu ostrzeżenia o nadpisaniu zmian w bieżącym formularzu przepisu.
 
 ### 3.4. Manualne dodawanie, przeglądanie, edycja i usuwanie przepisów (CRUD)
 
@@ -75,15 +76,16 @@ Główne typy przepisów, które użytkownicy chcą digitalizować, to:
 
 - Po zalogowaniu użytkownik widzi listę/galerię swoich przepisów.
 - Każdy element listy zawiera co najmniej:
-  - Miniaturę zdjęcia potrawy (jeśli zostało zaimportowane z URL) - w przypadku gdy nie ma zdjęcia, wyświetla się domyślne zdjęcie.
+  - Miniaturę zdjęcia potrawy (jeśli zostało zaimportowane z URL lub dodane manualnie) - w przypadku gdy nie ma zdjęcia, wyświetla się domyślne zdjęcie.
   - Nazwę potrawy.
-- Możliwość sortowania listy przepisów według daty dodania (domyślnie od najnowszych).
+- Możliwość sortowania listy przepisów według daty dodania (domyślnie od najnowszych) oraz nazwy.
+- Możliwość filtrowania listy przepisów poprzez wybór jednego lub wielu tagów jednocześnie.
 - W widocznym miejscu na liście przepisów znajduje się licznik wszystkich przepisów użytkownika.
 - Kliknięcie na przepis na liście przenosi do widoku szczegółowego przepisu, który wyświetla wszystkie dane przepisu, w tym większe zdjęcie (jeśli dostępne) i datę dodania.
 
 ### 3.7. Feedback użytkownika dotyczący jakości parsowania
 
-- Po zakończeniu procesu parsowania AI (zarówno z wklejonego tekstu, jak i z importu URL, przed etapem edycji), użytkownik ma możliwość oceny jakości wyniku za pomocą prostego mechanizmu (np. "kciuk w górę" / "kciuk w dół").
+- Po zakończeniu procesu parsowania AI (zarówno z wklejonego tekstu, jak i z importu URL, przed etapem edycji), użytkownik ma możliwość oceny jakości wyniku za pomocą prostego mechanizmu (np. "kciuk w górę" / "kciuk w dół"). Użytkownik może zmienić swoją wcześniejszą ocenę.
 - Zebrany feedback może być wykorzystany do przyszłej analizy i ulepszania modelu AI, ale nie jest to aktywna funkcja w MVP.
 
 ## 4. Granice produktu (Co NIE wchodzi w zakres MVP)
@@ -171,7 +173,7 @@ Kryteria akceptacji:
 
 1. Użytkownik ma dostęp do opcji "Dodaj przepis z tekstu".
 2. Wyświetla się pole tekstowe, do którego użytkownik może wkleić tekst przepisu (limit 10000 znaków, informacja o limicie jest widoczna).
-3. Po wklejeniu tekstu i zainicjowaniu parsowania, system AI próbuje wyodrębnić: nazwę potrawy, listę składników (jako osobne stringi), listę kroków (jako osobne stringi), sugerowane tagi (z predefiniowanej listy) oraz czas przygotowania.
+3. Po wklejeniu tekstu i zainicjowaniu parsowania, system AI próbuje wyodrębnić: nazwę potrawy, listę składników (jako osobne stringi), listę kroków (jako osobne stringi), umożliwić wybór wielu tagów (z predefiniowanej listy) oraz czas przygotowania.
 4. Wyniki parsowania są prezentowane użytkownikowi w edytowalnym formularzu w celu weryfikacji i edycji.
 5. Źródło przepisu jest ustawiane na "Własny" lub podobne, wskazujące na wklejony tekst.
 
@@ -187,16 +189,16 @@ Kryteria akceptacji:
 ID: US-007
 Tytuł: Dodawanie przepisu poprzez import z URL (aniagotuje.pl, kwestiasmaku.com)
 
-Opis: Jako użytkownik, chcę móc wkleić link URL do przepisu ze strony aniagotuje.pl lub kwestiasmaku.com, aby system automatycznie pobrał treść, główne zdjęcie i wyodrębnił strukturę przepisu za pomocą scrapera i AI.
+Opis: Jako użytkownik, chcę móc wkleić link URL do przepisu ze strony aniagotuje.pl lub kwestiasmaku.com, aby system automatycznie pobrał treść, zapisał na serwerze główne zdjęcie i wyodrębnił strukturę przepisu za pomocą scrapera i AI.
 Kryteria akceptacji:
 
 1. Użytkownik ma dostęp do opcji "Importuj przepis z URL".
 2. Wyświetla się pole do wklejenia linku URL.
 3. Po wklejeniu linku z obsługiwanej domeny i zainicjowaniu importu:
-   a. Dedykowany scraper pobiera treść HTML przepisu i link do głównego zdjęcia.
+   a. Dedykowany scraper pobiera treść HTML przepisu i link do głównego zdjęcia. Backend następnie pobiera obrazek i zapisuje go na serwerze.
    b. Treść HTML jest konwertowana do formatu Markdown i oczyszczana z nieistotnych elementów (np. reklamy, komentarze), jeśli to możliwe.
-   c. Oczyszczona treść jest przekazywana do modułu LLM, który parsuje ją na: nazwę potrawy, listę składników, listę kroków, sugerowane tagi, czas przygotowania.
-4. Wyniki parsowania oraz pobrane zdjęcie są prezentowane użytkownikowi w edytowalnym formularzu w celu weryfikacji i edycji.
+   c. Oczyszczona treść jest przekazywana do modułu LLM, który parsuje ją na: nazwę potrawy, listę składników, listę kroków, umożliwia wybór wielu tagów, czas przygotowania.
+4. Wyniki parsowania oraz pobrany i zapisany na serwerze obrazek są prezentowane użytkownikowi w edytowalnym formularzu w celu weryfikacji i edycji.
 5. Pole "Źródło" jest automatycznie wypełniane wklejonym adresem URL.
 
 ID: US-008
@@ -216,10 +218,10 @@ Tytuł: Weryfikacja i edycja sparsowanych/zaimportowanych danych przepisu
 Opis: Jako użytkownik, chcę móc przejrzeć dane wyodrębnione przez AI/scraper i dokonać niezbędnych korekt oraz uzupełnień w edytowalnym formularzu przed finalnym zapisem przepisu.
 Kryteria akceptacji:
 
-1. Po automatycznym parsowaniu (z tekstu lub URL), wyświetlany jest formularz z wypełnionymi polami: nazwa, składniki (każdy jako osobne pole tekstowe), kroki (każdy jako osobne pole `textarea`), tagi (możliwość edycji z predefiniowanej listy), czas przygotowania, źródło.
+1. Po automatycznym parsowaniu (z tekstu lub URL), wyświetlany jest formularz z wypełnionymi polami: nazwa, składniki (każdy jako osobne pole tekstowe), kroki (każdy jako osobne pole `textarea`), tagi (możliwość wyboru wielu tagów z predefiniowanej listy), czas przygotowania, źródło, notatki.
 2. Użytkownik może edytować każde z tych pól.
 3. Użytkownik może dodawać nowe składniki/kroki lub usuwać istniejące.
-4. Dla przepisów dodawanych z wklejonego tekstu, użytkownik ma możliwość przywrócenia oryginalnego, surowego tekstu wklejonego na początku, aby np. skopiować fragmenty, jeśli parsowanie było niedokładne.
+4. Dla przepisów dodawanych z wklejonego tekstu, użytkownik ma możliwość wyświetlenia i edycji oryginalnego, surowego tekstu wklejonego na początku. Możliwe jest również ponowne przetworzenie tego zmodyfikowanego tekstu, po otrzymaniu ostrzeżenia o nadpisaniu zmian w formularzu.
 5. Formularz zawiera przycisk "Zapisz przepis".
 6. Podstawowa walidacja formularza przed zapisem (np. nazwa, min. 1 składnik, min. 1 krok).
 
@@ -258,8 +260,9 @@ Kryteria akceptacji:
 1. Po zalogowaniu, użytkownik jest przekierowywany do widoku listy swoich przepisów lub ma do niego łatwy dostęp.
 2. Lista wyświetla przepisy w formie kafelków lub wierszy.
 3. Każdy element na liście pokazuje co najmniej miniaturę zdjęcia (jeśli dostępne) oraz tytuł przepisu.
-4. Lista jest domyślnie sortowana po dacie dodania, od najnowszego do najstarszego.
-5. W widocznym miejscu na stronie listy przepisów znajduje się licznik pokazujący całkowitą liczbę przepisów użytkownika.
+4. Lista jest domyślnie sortowana po dacie dodania, od najnowszego do najstarszego. Możliwe jest również sortowanie po nazwie.
+5. Użytkownik ma możliwość filtrowania listy przepisów poprzez wybór wielu tagów jednocześnie.
+6. W widocznym miejscu na stronie listy przepisów znajduje się licznik pokazujący całkowitą liczbę przepisów użytkownika.
 
 ID: US-013
 Tytuł: Wyświetlanie szczegółów przepisu
