@@ -7,6 +7,8 @@ import type {
   ExtractFromTextResponseDTO,
   ExtractFromUrlResponseDTO,
   FeedbackType,
+  CreateRecipeCommand,
+  UpdateRecipeCommand,
 } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,19 +29,21 @@ import DynamicFieldList from "@/components/DynamicFieldList";
 import MultiSelectTags from "@/components/MultiSelectTags";
 import AiFeedbackButtons from "@/components/AiFeedbackButtons";
 
-// Mocked tags data for development
-const MOCK_TAGS: TagDTO[] = [
-  { id: "1", name: "Śniadanie", slug: "sniadanie" },
-  { id: "2", name: "Obiad", slug: "obiad" },
-  { id: "3", name: "Kolacja", slug: "kolacja" },
-  { id: "4", name: "Wegetariańskie", slug: "wegetarianskie" },
-  { id: "5", name: "Wegańskie", slug: "weganskie" },
-  { id: "6", name: "Deser", slug: "deser" },
-  { id: "7", name: "Przekąska", slug: "przekaska" },
-  { id: "8", name: "Zupa", slug: "zupa" },
-  { id: "9", name: "Sałatka", slug: "salatka" },
-  { id: "10", name: "Szybkie", slug: "szybkie" },
-];
+// Funkcja do pobierania tagów z API
+const fetchTags = async (): Promise<TagDTO[]> => {
+  try {
+    const response = await fetch("/api/tags");
+    if (!response.ok) {
+      console.error("Błąd podczas pobierania tagów:", response.status);
+      return [];
+    }
+    const data = await response.json();
+    return data.tags || [];
+  } catch (error) {
+    console.error("Błąd podczas pobierania tagów:", error);
+    return [];
+  }
+};
 
 // Schemat walidacji Zod
 const recipeSchema = z.object({
@@ -104,7 +108,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [availableTags] = useState<TagDTO[]>(MOCK_TAGS);
+  const [availableTags, setAvailableTags] = useState<TagDTO[]>([]);
   const [showReprocessDialog, setShowReprocessDialog] = useState(false);
 
   useEffect(() => {
@@ -113,6 +117,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
       console.log("Populating form with recipeData:", recipeData);
     }
   }, [mode, recipeData, recipeId]);
+
+  useEffect(() => {
+    const loadTags = async () => {
+      const tags = await fetchTags();
+      setAvailableTags(tags);
+    };
+
+    loadTags();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -339,17 +352,80 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
     try {
       // Walidacja za pomocą Zod
       const validatedData = recipeSchema.parse(formData);
-      console.log("Form data valid:", validatedData);
 
-      // Symulacja wywołania API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Przygotowanie danych dla API
+      const recipeData: CreateRecipeCommand | UpdateRecipeCommand = {
+        name: validatedData.name,
+        ingredients: validatedData.ingredients,
+        steps: validatedData.steps,
+        preparation_time: validatedData.preparation_time || null,
+        source_type: validatedData.source_type,
+        source_url: validatedData.source_url || null,
+        image_url: validatedData.image_url || null,
+        notes: validatedData.notes || null,
+        tag_ids: validatedData.tag_ids,
+      };
 
-      // if (Math.random() > 0.5) {
-      //   console.log("Simulated success");
-      //   // TODO: Redirect to recipe detail page
-      // } else {
-      //   throw new Error("Simulated API error");
-      // }
+      let response: Response;
+      if (mode === "new") {
+        // Tworzenie nowego przepisu
+        response = await fetch("/api/recipes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(recipeData),
+        });
+      } else {
+        // Aktualizacja istniejącego przepisu
+        if (!recipeId) {
+          throw new Error("Brak ID przepisu do aktualizacji");
+        }
+        response = await fetch(`/api/recipes/${recipeId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(recipeData),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        if (response.status === 400) {
+          const details = errorData.error?.details;
+          if (details) {
+            // Mapowanie błędów walidacji z API do formularza
+            const mappedErrors: Record<string, string> = {};
+            Object.entries(details).forEach(([field, errors]) => {
+              if (Array.isArray(errors) && errors.length > 0) {
+                mappedErrors[field] = errors[0];
+              }
+            });
+            setFormErrors(mappedErrors);
+          } else {
+            setFormErrors({
+              api: errorData.error?.message || "Błąd walidacji danych.",
+            });
+          }
+        } else if (response.status === 404) {
+          setFormErrors({
+            api: "Przepis nie został znaleziony.",
+          });
+        } else {
+          setFormErrors({
+            api: errorData.error?.message || "Wystąpił błąd podczas zapisywania przepisu.",
+          });
+        }
+        return;
+      }
+
+      // Sukces - pobierz dane utworzonego/zaktualizowanego przepisu
+      const savedRecipe: RecipeDetailDTO = await response.json();
+
+      // Przekierowanie na stronę szczegółów przepisu
+      window.location.href = `/recipes/${savedRecipe.id}`;
     } catch (error) {
       console.error("Error submitting form:", error);
 
@@ -369,7 +445,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
         }
       } else {
         setFormErrors({
-          api: "Wystąpił błąd podczas zapisywania przepisu. Spróbuj ponownie później.",
+          api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie.",
         });
         // Przewiń do komunikatu o błędzie API
         const apiError = document.querySelector("[data-error='api']");

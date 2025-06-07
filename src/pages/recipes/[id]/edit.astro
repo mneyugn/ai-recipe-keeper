@@ -12,36 +12,28 @@ const { id: recipeId } = Astro.params;
 // TODO: Authentication check (user = Astro.locals.user)
 // if (!user) { return Astro.redirect("/signin"); }
 
-// Simplified for debugging - actual data fetching logic will be restored
-let recipeData = null; // Placeholder
-let error = null; // Placeholder
+let recipeData: RecipeDetailDTO | null = null;
+let error: string | null = null;
 
 if (recipeId) {
-  // Placeholder for fetching recipe data.
-  // Replace with actual API call to GET /api/recipes/:id
-  // For now, we'll simulate a fetch and handle potential errors.
   try {
-    // SIMULATED FETCH: Replace with actual fetch logic
-    // const response = await fetch(`${Astro.url.origin}/api/recipes/${recipeId}`);
-    // if (!response.ok) {
-    //   if (response.status === 404) {
-    //     error = "Nie znaleziono przepisu.";
-    //   } else {
-    //     error = "Wystąpił błąd podczas pobierania danych przepisu.";
-    //   }
-    //   // Potentially redirect or show an error page
-    // } else {
-    //   recipeData = await response.json();
-    // }
-    console.log(`Attempting to fetch recipe with ID: ${recipeId} - (Simulated)`);
-    // Example: recipeData = { id: recipeId, name: "Fetched Recipe", ingredients: ["Fetched Ingredient"], steps: ["Fetched Step"], tags: [], ...other RecipeDetailDTO fields };
+    const response = await fetch(`${Astro.url.origin}/api/recipes/${recipeId}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        error = "Nie znaleziono przepisu.";
+      } else {
+        error = "Wystąpił błąd podczas pobierania danych przepisu.";
+      }
+    } else {
+      recipeData = (await response.json()) as RecipeDetailDTO;
+    }
   } catch (e) {
-    console.error("Error fetching recipe (simulated):", e);
+    console.error("Error fetching recipe:", e);
     error = "Wystąpił problem podczas ładowania przepisu.";
   }
 } else {
   error = "Brak ID przepisu do edycji.";
-  // Potentially redirect to an error page or recipes list
 }
 
 if (error && !recipeData) {
@@ -52,9 +44,11 @@ if (error && !recipeData) {
 }
 ---
 
-<MainLayout title={`Edytuj przepis ${recipeId}`}>
+<MainLayout title={recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}>
   <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-bold mb-6">Edytuj przepis {recipeId}</h1>
+    <h1 class="text-3xl font-bold mb-6">
+      {recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}
+    </h1>
     {/* Basic rendering for now - will add conditionals back */}
     <RecipeForm client:load mode="edit" recipeId={recipeId} recipeData={recipeData} />
     {error && <p class="text-red-500">{error}</p>}

@@ -73,12 +73,18 @@
   - ✅ Obsługa wszystkich endpointów ekstrakcji
   - ✅ Obsługa feedbacku AI
   - ✅ Pełna obsługa błędów (400, 422, 429, 500, błędy sieci)
-- [ ] Implementacja endpointów API przepisów:
-  - POST /api/recipes - tworzenie nowego przepisu
-  - PUT /api/recipes/[id] - aktualizacja przepisu
-  - GET /api/recipes/[id] - pobieranie szczegółów przepisu do edycji
-- [ ] Integracja formularza z API przepisów
-- [ ] Przekierowania po udanym zapisie
+- ✅ Implementacja endpointów API przepisów:
+  - ✅ POST /api/recipes - tworzenie nowego przepisu (istniejący)
+  - ✅ PUT /api/recipes/[id] - aktualizacja przepisu (istniejący)
+  - ✅ GET /api/recipes/[id] - pobieranie szczegółów przepisu do edycji (istniejący)
+- ✅ Integracja formularza z API przepisów:
+  - ✅ Wywołania API dla POST i PUT
+  - ✅ Obsługa wszystkich błędów walidacji (400 z details)
+  - ✅ Obsługa błędów 404, 500
+  - ✅ Mapowanie błędów walidacji z API do pól formularza
+- ✅ Przekierowania po udanym zapisie:
+  - ✅ Przekierowanie na /recipes/{id} po zapisie
+  - ✅ Pobieranie danych przepisu w trybie edycji z API
 
 ### Tryby AI
 
@@ -124,6 +130,7 @@
    - Walidacja klient/serwer
    - DynamicFieldList dla składników i kroków
    - MultiSelectTags dla tagów
+   - **Integracja z API przepisów (POST/PUT)**
 
 2. **Tryb ekstrakcji z tekstu** ✅
 
@@ -132,6 +139,7 @@
    - Edycja wyekstrahowanych danych
    - Możliwość ponownego przetworzenia
    - Feedback dla AI
+   - **Integracja z API przepisów (POST/PUT)**
 
 3. **Tryb importu z URL** ✅
    - Walidacja URL i dozwolonych domen
@@ -139,6 +147,7 @@
    - Wyświetlanie zaimportowanego obrazka
    - Edycja zaimportowanych danych
    - Feedback dla AI
+   - **Integracja z API przepisów (POST/PUT)**
 
 ### Obsługa błędów i UX
 
@@ -148,3 +157,17 @@
 - ✅ Potwierdzenia dla potencjalnie destrukcyjnych akcji
 - ✅ Automatyczne przewijanie do błędów walidacji
 - ✅ Responsywny design
+- ✅ **Przekierowania po udanym zapisie na /recipes/{id}**
+
+### Pełna integracja API
+
+- ✅ **Endpointy ekstrakcji AI**:
+  - POST /api/recipe/extract-from-text
+  - POST /api/recipe/extract-from-url
+  - POST /api/recipe/extraction/[logId]/feedback
+- ✅ **Endpointy przepisów**:
+  - GET /api/recipes/[id] - pobieranie do edycji
+  - POST /api/recipes - tworzenie nowego przepisu
+  - PUT /api/recipes/[id] - aktualizacja przepisu
+- ✅ **Obsługa wszystkich błędów HTTP**: 400, 404, 422, 429, 500
+- ✅ **Mapowanie błędów walidacji** z API do pól formularza

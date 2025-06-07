@@ -132,7 +132,9 @@ export interface ExtractionFeedbackCommand {
  * DTO for a single tag
  * Used in tag lists and recipe details
  */
-export type TagDTO = Pick<Tables<"tags">, "id" | "name" | "slug">;
+export interface TagDTO extends Pick<Tables<"tags">, "id" | "name" | "slug"> {
+  color_hex?: string; // Opcjonalne, jeśli nie będzie w bazie danych
+}
 
 /**
  * DTO for tag list
