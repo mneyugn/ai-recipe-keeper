@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { TagService } from "../../lib/services/TagService";
+import { TagService } from "../../lib/services/tag.service";
 import type { TagListResponseDTO, ErrorResponseDTO } from "../../types";
 
 export const prerender = false;

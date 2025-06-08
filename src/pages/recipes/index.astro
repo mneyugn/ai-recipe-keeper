@@ -1,0 +1,35 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecipeListContainer from "../../components/RecipeListContainer";
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
+import type { RecipeListQueryParams } from "../../types";
+
+// Używamy domyślnego user ID na razie (autentykacja będzie dodana później)
+const userId = DEFAULT_USER_ID;
+
+// Parsowanie parametrów URL
+const url = new URL(Astro.request.url);
+const initialParams: RecipeListQueryParams = {
+  page: Number(url.searchParams.get("page")) || 1,
+  limit: Math.min(Number(url.searchParams.get("limit")) || 20, 100),
+  sort: (url.searchParams.get("sort") as RecipeListQueryParams["sort"]) || "created_at:desc",
+  tag: url.searchParams.get("tags") || undefined,
+};
+
+// Walidacja parametrów
+if (initialParams.page && initialParams.page < 1) initialParams.page = 1;
+if (initialParams.limit && (initialParams.limit < 1 || initialParams.limit > 100)) initialParams.limit = 20;
+
+const validSortOptions = ["created_at:asc", "created_at:desc", "name:asc", "name:desc"];
+if (initialParams.sort && !validSortOptions.includes(initialParams.sort)) {
+  initialParams.sort = "created_at:desc";
+}
+---
+
+<Layout title="Moje Przepisy - AI RecipeKeeper">
+  <main class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+      <RecipeListContainer initialParams={initialParams} userId={userId} client:load />
+    </div>
+  </main>
+</Layout>
