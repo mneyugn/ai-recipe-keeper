@@ -1,0 +1,35 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { ProfileContainer } from "../components/ProfileContainer";
+import { DEFAULT_USER_ID } from "../db/supabase.client";
+
+// Server-side auth check
+const { locals } = Astro;
+const supabase = locals.supabase;
+
+// Get user session
+const {
+  data: { session },
+  error,
+} = await supabase.auth.getSession();
+
+const userId = DEFAULT_USER_ID;
+// If no session, redirect to login
+// if (!session || error) {
+//   return Astro.redirect("/login");
+// }
+
+// Verify user exists and is active
+const { data: user } = await supabase.from("users").select("id, email, username").eq("id", userId).single();
+console.log(user);
+if (!user) {
+  // User not found in database, redirect to login
+  return Astro.redirect("/login");
+}
+
+export const prerender = false;
+---
+
+<AppLayout title="Profil użytkownika">
+  <ProfileContainer client:load />
+</AppLayout>

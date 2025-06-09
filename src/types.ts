@@ -219,3 +219,72 @@ export type RecipeSourceType = "manual" | "url" | "text";
  * Based on values from API validation
  */
 export type FeedbackType = "positive" | "negative";
+
+// ===== Profile View Types =====
+
+/**
+ * State for the profile view component
+ * Manages loading, error and data states
+ */
+export interface ProfileViewState {
+  data: UserProfileViewModel | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+/**
+ * View model for user profile with formatted data
+ * Transforms UserProfileDTO into user-friendly format
+ */
+export interface UserProfileViewModel {
+  id: string;
+  email: string;
+  username: string;
+  isAdmin: boolean;
+  createdAt: string;
+  recipeCount: number;
+  extractionLimit: ExtractionLimitInfo;
+  memberSinceFormatted: string; // "Członek od: Styczeń 2024"
+}
+
+/**
+ * Information about extraction limits with calculations and formatting
+ * Used for displaying usage progress and reset dates
+ */
+export interface ExtractionLimitInfo {
+  used: number;
+  limit: number;
+  date: string;
+  percentageUsed: number; // used/limit * 100
+  isLimitExceeded: boolean; // used >= limit
+  resetDateFormatted: string; // "Limit odnawia się jutro" lub "Limit odnawia się 15.01.2024"
+  daysTillReset: number;
+}
+
+/**
+ * Props for UserInfoCard component
+ * Displays basic user information
+ */
+export interface UserInfoCardProps {
+  email: string;
+  username: string;
+  recipeCount: number;
+  memberSince: string;
+}
+
+/**
+ * Props for ExtractionLimitCard component
+ * Displays extraction limit information with progress
+ */
+export interface ExtractionLimitCardProps {
+  extractionLimit: ExtractionLimitInfo;
+}
+
+/**
+ * Props for LogoutButton component
+ * Handles user logout with loading state
+ */
+export interface LogoutButtonProps {
+  onLogout: () => Promise<void>;
+  isLoading?: boolean;
+}
