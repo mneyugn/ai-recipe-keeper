@@ -1,0 +1,52 @@
+---
+import Layout from "./Layout.astro";
+import { SidebarRenderer } from "../components/SidebarRenderer";
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+<Layout title={title}>
+  <div class="min-h-screen bg-background">
+    <!-- Sidebar Integration -->
+    <SidebarRenderer client:load />
+
+    <!-- Main Content -->
+    <main class="lg:ml-80 min-h-screen">
+      <div class="container mx-auto p-4 lg:p-6">
+        <slot />
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  /* Responsywność */
+  @media (max-width: 1023px) {
+    main {
+      margin-left: 0 !important;
+    }
+  }
+
+  /* Animacje dla mobile sidebara */
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-in.slide-in-from-left {
+    animation: slide-in-from-left 0.3s ease-out;
+  }
+
+  /* Smooth transitions */
+  main {
+    transition: margin-left 0.3s ease-in-out;
+  }
+</style>

@@ -1,5 +1,5 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import AppLayout from "../../layouts/AppLayout.astro";
 import RecipeListContainer from "../../components/RecipeListContainer";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import type { RecipeListQueryParams } from "../../types";
@@ -26,10 +26,10 @@ if (initialParams.sort && !validSortOptions.includes(initialParams.sort)) {
 }
 ---
 
-<Layout title="Moje Przepisy - AI RecipeKeeper">
+<AppLayout title="Moje Przepisy - AI RecipeKeeper">
   <main class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <div class="container mx-auto px-4 py-8">
       <RecipeListContainer initialParams={initialParams} userId={userId} client:load />
     </div>
   </main>
-</Layout>
+</AppLayout>
