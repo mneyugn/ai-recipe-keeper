@@ -183,12 +183,17 @@ export interface ErrorResponseDTO {
 // ===== Query Parameters Types =====
 
 /**
+ * Typ sortowania dla list przepisów
+ */
+export type RecipeSortOption = "created_at:asc" | "created_at:desc" | "name:asc" | "name:desc";
+
+/**
  * Query parameters for GET /api/recipes
  */
 export interface RecipeListQueryParams {
   page?: number;
   limit?: number;
-  sort?: "created_at:asc" | "created_at:desc" | "name:asc" | "name:desc";
+  sort?: RecipeSortOption;
   tag?: string;
 }
 
@@ -287,4 +292,102 @@ export interface ExtractionLimitCardProps {
 export interface LogoutButtonProps {
   onLogout: () => Promise<void>;
   isLoading?: boolean;
+}
+
+// ===== OpenRouter Service Types =====
+
+/**
+ * Konfiguracja serwisu OpenRouter
+ */
+export interface OpenRouterConfig {
+  apiKey: string;
+  baseUrl?: string;
+  defaultModel?: string;
+  timeout?: number;
+  maxRetries?: number;
+  retryDelay?: number;
+}
+
+/**
+ * Request do OpenRouter API dla chat completion
+ */
+export interface ChatCompletionRequest {
+  systemMessage: string;
+  userMessage: string;
+  modelName?: string;
+  responseFormat?: ResponseFormat;
+  modelParameters?: ModelParameters;
+}
+
+/**
+ * Format odpowiedzi z JSON schema
+ */
+export interface ResponseFormat {
+  type: "json_schema";
+  json_schema: {
+    name: string;
+    strict: boolean;
+    schema: object;
+  };
+}
+
+/**
+ * Parametry modelu AI
+ */
+export interface ModelParameters {
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  frequency_penalty?: number;
+  presence_penalty?: number;
+}
+
+/**
+ * Wiadomość w formacie OpenRouter API
+ */
+export interface Message {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Odpowiedź z OpenRouter API
+ */
+export interface ChatCompletionResponse {
+  id: string;
+  choices: {
+    message: {
+      role: string;
+      content: string;
+    };
+    finish_reason: string;
+  }[];
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+/**
+ * Konfiguracja retry logic
+ */
+export interface RetryConfig {
+  maxRetries: number;
+  retryDelay: number;
+  backoffMultiplier: number;
+}
+
+/**
+ * Błąd OpenRouter API
+ */
+export class OpenRouterError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public errorType?: "network" | "auth" | "rate_limit" | "model" | "validation" | "response_format"
+  ) {
+    super(message);
+    this.name = "OpenRouterError";
+  }
 }

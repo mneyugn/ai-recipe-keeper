@@ -1,16 +1,15 @@
 import React from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-
-type SortOption = "created_at:desc" | "created_at:asc" | "name:asc" | "name:desc";
+import type { RecipeSortOption } from "../types";
 
 interface SortSelectorProps {
-  currentSort: string;
-  onSortChange: (sort: string) => void;
+  currentSort: RecipeSortOption;
+  onSortChange: (sort: RecipeSortOption) => void;
   disabled?: boolean;
 }
 
-const sortOptions: { value: SortOption; label: string; icon: string }[] = [
+const sortOptions: { value: RecipeSortOption; label: string; icon: string }[] = [
   { value: "created_at:desc", label: "Najnowsze", icon: "↓" },
   { value: "created_at:asc", label: "Najstarsze", icon: "↑" },
   { value: "name:asc", label: "Nazwa A-Z", icon: "🔤" },

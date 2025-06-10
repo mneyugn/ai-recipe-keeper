@@ -18,7 +18,7 @@ export function transformUserProfileData(dto: UserProfileDTO): UserProfileViewMo
   return {
     id: dto.id,
     email: dto.email,
-    username: dto.username,
+    username: dto.username || dto.email.split("@")[0], // Fallback do części przed @ jeśli username null
     isAdmin: dto.is_admin,
     createdAt: dto.created_at,
     recipeCount: dto.recipe_count,

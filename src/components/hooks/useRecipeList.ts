@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { RecipeListQueryParams, RecipeListItemDTO, PaginationDTO } from "../../types";
+import type { RecipeListQueryParams, RecipeListItemDTO, PaginationDTO, RecipeSortOption } from "../../types";
 
 // Typy lokalne dla hook'a
 interface RecipeListViewModel {
@@ -13,7 +13,7 @@ interface RecipeListViewModel {
 }
 
 interface FilterState {
-  sort: string;
+  sort: RecipeSortOption;
   selectedTagIds: string[]; // Tag IDs (UUID)
   searchQuery?: string;
 }
@@ -27,7 +27,7 @@ interface UseRecipeListReturn {
   state: RecipeListViewModel;
   actions: {
     loadMore: () => Promise<void>;
-    changeSort: (sort: string) => void;
+    changeSort: (sort: RecipeSortOption) => void;
     changeTagFilter: (tagIds: string[]) => void;
     refresh: () => Promise<void>;
     navigateToRecipe: (id: string) => void;
@@ -172,7 +172,7 @@ export const useRecipeList = ({ initialParams, userId }: UseRecipeListParams): U
 
   // Zmiana sortowania
   const changeSort = useCallback(
-    (sort: string) => {
+    (sort: RecipeSortOption) => {
       setState((prev) => ({
         ...prev,
         filters: { ...prev.filters, sort },
