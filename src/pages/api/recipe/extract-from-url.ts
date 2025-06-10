@@ -1,7 +1,9 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { ExtractFromUrlResponseDTO, ErrorResponseDTO } from "../../../types";
-// import { DEFAULT_USER_ID } from "../../../db/supabase.client";
+import { RecipeExtractionService } from "../../../lib/services/recipe-extraction.service";
+import { UrlScraperService } from "../../../lib/services/url-scraper.service";
+import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 const extractFromUrlSchema = z.object({
   url: z
@@ -81,51 +83,199 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { url } = validationResult.data;
 
-    // 4. Check daily extraction limit (same as text extraction)
-    // TODO: Implement daily limit check similar to extract-from-text
+    // 4. Initialize services
+    const extractionService = new RecipeExtractionService();
+    const scraperService = new UrlScraperService();
 
-    // 5. Scrape and extract recipe data from URL (mocked for now)
+    // 5. Check daily extraction limit
+    let isUnderLimit;
     try {
-      // TODO: Implement actual scraping logic
-      // This would typically involve:
-      // 1. Fetch the webpage content
-      // 2. Parse HTML and extract relevant text
-      // 3. Use AI to structure the data
-      // 4. Extract any images
+      isUnderLimit = await extractionService.checkDailyLimit(DEFAULT_USER_ID);
+    } catch (error) {
+      console.error("Error checking daily limit:", error);
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "DATABASE_ERROR",
+            message: "Internal server error",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
-      // For now, return mocked data
-      const mockExtractedData = {
-        name: "Przepis z " + new URL(url).hostname,
-        ingredients: ["Składnik 1 z strony", "Składnik 2 z strony", "Składnik 3 z strony"],
-        steps: ["Przygotuj składniki zgodnie z instrukcją ze strony", "Gotuj według przepisu"],
-        preparation_time: "45 minut",
-        suggested_tags: ["deser"],
-        image_url: "https://placehold.co/600x400?text=Jedzenie",
-        source_url: url,
-      };
+    if (!isUnderLimit) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "DAILY_LIMIT_EXCEEDED",
+            message: "Przekroczono dzienny limit ekstrakcji (100/dzień)",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
-      // 6. Log extraction attempt
-      const extractionLogId = `url-mock-${Date.now()}`;
+    // 6. Scrape and extract recipe data from URL
+    let extractionResult;
+    let extractionLogId;
+    const startTime = Date.now();
 
-      // 7. Prepare response
-      const response: ExtractFromUrlResponseDTO = {
-        extraction_log_id: extractionLogId,
-        extracted_data: mockExtractedData,
-      };
+    try {
+      extractionResult = await scraperService.extractFromUrl(url);
+      const generationDuration = Date.now() - startTime;
 
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      // Sprawdź czy są krytyczne błędy (brak składników lub kroków)
+      if (extractionResult.hasErrors) {
+        // Log failed extraction attempt
+        extractionLogId = await extractionService.logExtractionAttempt(
+          DEFAULT_USER_ID,
+          url,
+          null,
+          `Krytyczne błędy walidacji: ${extractionResult.warnings.join(", ")}`,
+          null,
+          generationDuration
+        );
+
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: "AI_EXTRACTION_ERROR",
+              message:
+                "Nie udało się wyekstraktować kluczowych danych przepisu z podanej strony. Sprawdź czy adres zawiera przepis kulinarny.",
+              details: {
+                warnings: extractionResult.warnings.join("; "),
+              },
+            },
+          } as ErrorResponseDTO),
+          {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 7. Log successful extraction to database (nawet z ostrzeżeniami)
+      extractionLogId = await extractionService.logExtractionAttempt(
+        DEFAULT_USER_ID,
+        url, // URL jako input data
+        extractionResult.data,
+        extractionResult.warnings.length > 0 ? `Ostrzeżenia: ${extractionResult.warnings.join(", ")}` : null,
+        null, // tokens will be available in future update
+        generationDuration
+      );
+
+      // 8. Increment daily extraction counter
+      await extractionService.incrementDailyCount(DEFAULT_USER_ID);
     } catch (error) {
       console.error("Error during URL extraction:", error);
+      const generationDuration = Date.now() - startTime;
+
+      // Log failed extraction attempt
+      try {
+        extractionLogId = await extractionService.logExtractionAttempt(
+          DEFAULT_USER_ID,
+          url,
+          null,
+          error instanceof Error ? error.message : "Unknown error",
+          null,
+          generationDuration
+        );
+      } catch (logError) {
+        console.error("Error logging failed extraction:", logError);
+        // Continue with original error response even if logging fails
+      }
+
+      // Return appropriate error based on the type of error
+      if (error instanceof Error) {
+        if (error.message.includes("klucz API") || error.message.includes("OPENROUTER_API_KEY")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "AI_SERVICE_ERROR",
+                message: "Serwis AI jest tymczasowo niedostępny. Spróbuj ponownie za chwilę.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 503,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("nie jest obsługiwana") || error.message.includes("Wspierane domeny")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "UNSUPPORTED_DOMAIN",
+                message: error.message,
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("timeout") || error.message.includes("czas oczekiwania")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "SCRAPING_TIMEOUT",
+                message: "Strona internetowa nie odpowiada. Spróbuj ponownie za chwilę.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 504,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("HTTP") || error.message.includes("pobierania strony")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "SCRAPING_ERROR",
+                message: "Nie udało się pobrać treści ze strony. Sprawdź czy adres jest poprawny.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("limit") || error.message.includes("rate")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "AI_SERVICE_ERROR",
+                message: "Serwis AI jest przeciążony. Spróbuj ponownie za chwilę.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 429,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
 
       return new Response(
         JSON.stringify({
           error: {
             code: "SCRAPING_ERROR",
             message:
-              "Nie udało się pobrać przepisu z podanego URL. Sprawdź czy adres jest poprawny i spróbuj ponownie.",
+              "Nie udało się pobrać przepisu z podanego URL. Sprawdź czy adres jest poprawny i zawiera przepis kulinarny.",
           },
         } as ErrorResponseDTO),
         {
@@ -134,6 +284,18 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
+
+    // 9. Prepare response
+    const response: ExtractFromUrlResponseDTO = {
+      extraction_log_id: extractionLogId,
+      extracted_data: extractionResult.data,
+      warnings: extractionResult.warnings.length > 0 ? extractionResult.warnings : undefined,
+    };
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Unexpected error in endpoint /api/recipe/extract-from-url:", error);
     return new Response(

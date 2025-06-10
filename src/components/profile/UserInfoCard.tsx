@@ -7,7 +7,7 @@ import type { UserInfoCardProps } from "../../types";
  * UserInfoCard component displaying basic user information
  * Shows email, username, recipe count and member since date
  */
-export function UserInfoCard({ email, username, recipeCount, memberSince }: UserInfoCardProps) {
+export function UserInfoCard({ email, recipeCount, memberSince }: UserInfoCardProps) {
   return (
     <Card className="w-full">
       <CardHeader>

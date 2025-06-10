@@ -1,13 +1,11 @@
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
-import type { Database, Json } from "../../db/database.types";
 import { OpenRouterService } from "../openrouter.service";
 import type { OpenRouterConfig, ChatCompletionRequest, ResponseFormat } from "../../types";
 
 /**
- * JSON Schema dla odpowiedzi AI - wyekstraktowane dane przepisu
+ * JSON Schema dla odpowiedzi AI - wyekstraktowane dane przepisu z URL
  */
-const RECIPE_EXTRACTION_SCHEMA = {
+const RECIPE_URL_EXTRACTION_SCHEMA = {
   type: "object",
   properties: {
     name: {
@@ -62,9 +60,9 @@ const RECIPE_EXTRACTION_SCHEMA = {
 };
 
 /**
- * System prompt dla ekstrakcji przepisów z tekstu
+ * System prompt dla ekstrakcji przepisów z HTML/treści URL
  */
-const RECIPE_EXTRACTION_SYSTEM_PROMPT = `You are an expert at analyzing Polish culinary recipes. Your task is to extract structured recipe data from the provided text.
+const RECIPE_URL_EXTRACTION_SYSTEM_PROMPT = `You are an expert at analyzing Polish culinary recipes from websites. Your task is to extract structured recipe data from content scraped from culinary websites.
 
 CRITICAL REQUIREMENTS - JSON FIELD NAMES:
 - Use EXACTLY these field names: "name", "ingredients", "steps", "preparation_time", "suggested_tags"
@@ -73,21 +71,31 @@ CRITICAL REQUIREMENTS - JSON FIELD NAMES:
 - Follow the JSON schema EXACTLY
 
 EXTRACTION RULES:
-1. Extract ONLY information that is actually present in the text
-2. Each ingredient as separate array item with quantity, unit and name (e.g. "2 szklanki mąki pszennej")
-3. Each preparation step as separate array item
-4. For suggested_tags use ONLY from this list: obiad, śniadanie, kolacja, deser, ciasto, zupa, makaron, mięso, ryby, wegetariańskie, wegańskie, latwe, szybkie, trudne
-5. If recipe name is not found, try to deduce it from context
-6. Ignore ads, comments and other irrelevant content
+1. Extract ONLY information that is actually present in the recipe content
+2. Ignore ads, comments, navigation, footers and other irrelevant page elements
+3. Each ingredient as separate array item with quantity, unit and name (e.g. "2 szklanki mąki pszennej")
+4. Each preparation step as separate array item
+5. For suggested_tags use ONLY from this list: obiad, śniadanie, kolacja, deser, ciasto, zupa, makaron, mięso, ryby, wegetariańskie, wegańskie, latwe, szybkie, trudne
+6. Focus on the main recipe, ignore variants and additional suggestions
+7. If recipe name is not found, try to deduce it from page title or context
 
 Return JSON response following the schema EXACTLY.`;
 
 /**
- * Service responsible for extracting recipe data from various sources (text, URL)
- * Includes rate limiting and database logging functionality
+ * Interfejs dla rezultatu scrapingu
  */
-export class RecipeExtractionService {
+interface ScrapingResult {
+  content: string;
+  imageUrl?: string;
+  title?: string;
+}
+
+/**
+ * Serwis do scrapingu przepisów z obsługiwanych URL
+ */
+export class UrlScraperService {
   private openRouterService: OpenRouterService;
+  private supportedDomains = ["aniagotuje.pl", "kwestiasmaku.com"];
 
   constructor() {
     // Inicjalizacja OpenRouter Service
@@ -95,7 +103,7 @@ export class RecipeExtractionService {
       apiKey: import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "",
       baseUrl: "https://openrouter.ai/api/v1",
       defaultModel: "anthropic/claude-3.5-sonnet",
-      timeout: 60000, // 60 sekund dla dłuższych requestów
+      timeout: 60000,
       maxRetries: 2,
       retryDelay: 2000,
     };
@@ -108,124 +116,150 @@ export class RecipeExtractionService {
   }
 
   /**
-   * Logs extraction attempt to database
-   * @param userId - UUID of the user
-   * @param inputText - original text that was processed
-   * @param extractedData - result of extraction (null if failed)
-   * @param errorMessage - error message if extraction failed
-   * @param tokensUsed - number of tokens used in AI request
-   * @param generationDuration - time taken for AI generation in milliseconds
-   * @returns Promise<string> - UUID of created log entry
+   * Sprawdza czy URL jest z obsługiwanej domeny
    */
-  async logExtractionAttempt(
-    userId: string = DEFAULT_USER_ID,
-    inputText: string,
-    extractedData: ExtractedRecipeDataDTO | null = null,
-    errorMessage: string | null = null,
-    tokensUsed: number | null = null,
-    generationDuration: number | null = null
-  ): Promise<string> {
+  isSupportedUrl(url: string): boolean {
     try {
-      const logEntry: Database["public"]["Tables"]["extraction_logs"]["Insert"] = {
-        user_id: userId,
-        module: "text",
-        input_data: inputText,
-        extraction_result: extractedData as Json,
-        error_message: errorMessage,
-        tokens_used: tokensUsed,
-        generation_duration: generationDuration,
-      };
-
-      const { data, error } = await supabaseClient.from("extraction_logs").insert(logEntry).select("id").single();
-
-      if (error) {
-        console.error("Error inserting extraction log:", error);
-        throw new Error("Failed to log extraction attempt");
-      }
-
-      return data.id;
-    } catch (error) {
-      console.error("Error in logExtractionAttempt:", error);
-      throw error;
+      const parsedUrl = new URL(url);
+      return this.supportedDomains.some(
+        (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
+      );
+    } catch {
+      return false;
     }
   }
 
   /**
-   * Checks if user has not exceeded daily extraction limit (100/day)
-   * @param userId - UUID of the user to check
-   * @returns Promise<boolean> - true if under limit, false if exceeded
+   * Pobiera i parsuje treść z URL
    */
-  async checkDailyLimit(userId: string = DEFAULT_USER_ID): Promise<boolean> {
+  private async scrapeUrl(url: string): Promise<ScrapingResult> {
     try {
-      const { data, error } = await supabaseClient.rpc("check_extraction_limit", {
-        p_user_id: userId,
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.8",
+        },
+        signal: AbortSignal.timeout(30000), // 30 sekund timeout
       });
 
-      if (error) {
-        console.error("Error checking daily extraction limit:", error);
-        throw new Error("Failed to check daily extraction limit");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return data;
+      const html = await response.text();
+      return this.extractContentFromHtml(html, url);
     } catch (error) {
-      console.error("Error in checkDailyLimit:", error);
-      throw error;
+      if (error instanceof Error) {
+        if (error.name === "TimeoutError") {
+          throw new Error("Przekroczono czas oczekiwania na odpowiedź ze strony");
+        }
+        throw new Error(`Błąd pobierania strony: ${error.message}`);
+      }
+      throw new Error("Nieznany błąd podczas pobierania strony");
     }
   }
 
   /**
-   * Increments the daily extraction counter for user
-   * @param userId - UUID of the user
-   * @returns Promise<void>
+   * Wyodrębnia treść przepisu z HTML
    */
-  async incrementDailyCount(userId: string = DEFAULT_USER_ID): Promise<void> {
-    try {
-      const { error } = await supabaseClient.rpc("increment_extraction_count", {
-        p_user_id: userId,
-      });
+  private extractContentFromHtml(html: string, url: string): ScrapingResult {
+    // Podstawowe czyszczenie HTML - usuwanie skryptów, stylów itp.
+    const cleanHtml = html
+      .replace(/<script[^>]*>.*?<\/script>/gis, "")
+      .replace(/<style[^>]*>.*?<\/style>/gis, "")
+      .replace(/<nav[^>]*>.*?<\/nav>/gis, "")
+      .replace(/<footer[^>]*>.*?<\/footer>/gis, "")
+      .replace(/<header[^>]*>.*?<\/header>/gis, "")
+      .replace(/<!--.*?-->/gs, "");
 
-      if (error) {
-        console.error("Error incrementing extraction count:", error);
-        throw new Error("Failed to increment daily extraction count");
-      }
-    } catch (error) {
-      console.error("Error in incrementDailyCount:", error);
-      throw error;
+    // Próba wyodrębnienia tytułu
+    const titleMatch = cleanHtml.match(/<title[^>]*>(.*?)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : undefined;
+
+    // Próba wyodrębnienia głównego obrazka (meta property="og:image" lub podobne)
+    const imageMatch = cleanHtml.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i);
+    let imageUrl = imageMatch ? imageMatch[1] : undefined;
+
+    // Jeśli nie ma og:image, spróbuj znaleźć inne obrazki związane z przepisem
+    if (!imageUrl) {
+      const imgMatch =
+        cleanHtml.match(/<img[^>]*src="([^"]*)"[^>]*alt="[^"]*przepis[^"]*"/i) ||
+        cleanHtml.match(/<img[^>]*alt="[^"]*przepis[^"]*"[^>]*src="([^"]*)"/i);
+      imageUrl = imgMatch ? imgMatch[1] : undefined;
     }
+
+    // Konwersja względnych URL na bezwzględne
+    if (imageUrl && !imageUrl.startsWith("http")) {
+      try {
+        const baseUrl = new URL(url);
+        imageUrl = new URL(imageUrl, baseUrl.origin).href;
+      } catch {
+        imageUrl = undefined;
+      }
+    }
+
+    // Usuwanie tagów HTML i konwersja do tekstu
+    const textContent = cleanHtml
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return {
+      content: textContent,
+      imageUrl,
+      title,
+    };
   }
 
   /**
-   * Extracts recipe data from unstructured text using AI
-   * @param text - text containing recipe to extract
-   * @returns Promise with extracted recipe data and potential warnings
+   * Ekstraktuje przepis z URL używając scrapingu i AI
    */
-  async extractFromText(text: string): Promise<ExtractionValidationResult> {
+  async extractFromUrl(url: string): Promise<ExtractionValidationResult> {
+    if (!this.isSupportedUrl(url)) {
+      throw new Error("Podana strona nie jest obsługiwana. Wspierane domeny: aniagotuje.pl, kwestiasmaku.com");
+    }
+
     try {
-      // Przygotowanie response format z JSON schema
+      // 1. Scraping treści
+      const scrapingResult = await this.scrapeUrl(url);
+
+      if (!scrapingResult.content || scrapingResult.content.length < 100) {
+        throw new Error("Nie udało się pobrać wystarczającej ilości treści ze strony");
+      }
+
+      // 2. Przygotowanie response format z JSON schema
       const responseFormat: ResponseFormat = {
         type: "json_schema",
         json_schema: {
-          name: "recipe_extraction",
+          name: "recipe_url_extraction",
           strict: true,
-          schema: RECIPE_EXTRACTION_SCHEMA,
+          schema: RECIPE_URL_EXTRACTION_SCHEMA,
         },
       };
 
-      // Przygotowanie requestu do OpenRouter
+      // 3. Przygotowanie requestu do OpenRouter
       const chatRequest: ChatCompletionRequest = {
-        systemMessage: RECIPE_EXTRACTION_SYSTEM_PROMPT,
-        userMessage: `Wyekstraktuj dane przepisu z następującego tekstu:\n\n${text}`,
+        systemMessage: RECIPE_URL_EXTRACTION_SYSTEM_PROMPT,
+        userMessage: `Wyekstraktuj dane przepisu z następującej treści strony internetowej:
+
+URL: ${url}
+${scrapingResult.title ? `Tytuł strony: ${scrapingResult.title}` : ""}
+
+Treść:
+${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
         responseFormat,
         modelParameters: {
-          temperature: 0.1, // Niska temperatura dla większej konsystencji
+          temperature: 0.1,
           max_tokens: 2000,
         },
       };
 
-      // Wywołanie OpenRouter API
+      // 4. Wywołanie OpenRouter API
       const response = await this.openRouterService.createChatCompletion(chatRequest);
 
-      // Parsowanie odpowiedzi JSON
+      // 5. Parsowanie odpowiedzi JSON
       const assistantMessage = response.choices[0]?.message?.content;
       if (!assistantMessage) {
         throw new Error("Brak odpowiedzi od modelu AI");
@@ -240,14 +274,18 @@ export class RecipeExtractionService {
         );
       }
 
-      // Walidacja wyekstraktowanych danych
+      // 6. Walidacja wyekstraktowanych danych
       const validationResult = this.validateExtractedData(extractedData);
+
+      // 7. Dodanie URL źródła i obrazka jeśli dostępny
+      validationResult.data.source_url = url;
+      if (scrapingResult.imageUrl) {
+        validationResult.data.image_url = scrapingResult.imageUrl;
+      }
 
       return validationResult;
     } catch (error) {
-      console.error("Error in extractFromText:", error);
-
-      // Rzucamy error dalej, żeby endpoint mógł go odpowiednio obsłużyć
+      console.error("Error in extractFromUrl:", error);
       throw error;
     }
   }
@@ -262,7 +300,7 @@ export class RecipeExtractionService {
 
     if (!data || typeof data !== "object") {
       hasErrors = true;
-      warnings.push("Otrzymano nieprawidłowe dane z AI - spróbuj ponownie z innym tekstem");
+      warnings.push("Otrzymano nieprawidłowe dane z AI - spróbuj ponownie z innym URL");
       return {
         data: this.getDefaultRecipeData(),
         warnings,
@@ -271,7 +309,6 @@ export class RecipeExtractionService {
     }
 
     const obj = data as Record<string, unknown>;
-    console.log("obj", obj);
 
     // Inicjalizacja wyniku z domyślnymi wartościami
     const result: ExtractedRecipeDataDTO = {

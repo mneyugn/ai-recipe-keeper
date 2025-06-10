@@ -100,6 +100,15 @@ export interface ExtractedRecipeDataDTO {
 }
 
 /**
+ * Result of extraction validation with potential warnings
+ */
+export interface ExtractionValidationResult {
+  data: ExtractedRecipeDataDTO;
+  warnings: string[]; // Lista ostrzeżeń dla użytkownika
+  hasErrors: boolean; // Czy są jakieś krytyczne problemy
+}
+
+/**
  * DTO for text extraction response
  * Returned by POST /api/recipe/extract-from-text
  */
@@ -107,6 +116,7 @@ export interface ExtractFromTextResponseDTO {
   extraction_log_id: string;
   extracted_data: ExtractedRecipeDataDTO;
   original_text: string;
+  warnings?: string[]; // Ostrzeżenia z procesu ekstrakcji
 }
 
 /**
@@ -116,6 +126,7 @@ export interface ExtractFromTextResponseDTO {
 export interface ExtractFromUrlResponseDTO {
   extraction_log_id: string;
   extracted_data: ExtractedRecipeDataDTO;
+  warnings?: string[]; // Ostrzeżenia z procesu ekstrakcji
 }
 
 /**
@@ -272,7 +283,6 @@ export interface ExtractionLimitInfo {
  */
 export interface UserInfoCardProps {
   email: string;
-  username: string;
   recipeCount: number;
   memberSince: string;
 }

@@ -21,7 +21,6 @@ const userId = DEFAULT_USER_ID;
 
 // Verify user exists and is active
 const { data: user } = await supabase.from("users").select("id, email, username").eq("id", userId).single();
-console.log(user);
 if (!user) {
   // User not found in database, redirect to login
   return Astro.redirect("/login");

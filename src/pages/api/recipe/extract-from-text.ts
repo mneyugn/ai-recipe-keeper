@@ -106,19 +106,60 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 6. Extract recipe data from text using AI (mocked)
-    let extractedData;
+    // 6. Extract recipe data from text using AI
+    let extractionResult;
     let extractionLogId;
-    try {
-      extractedData = await extractionService.extractFromText(text);
+    const startTime = Date.now();
 
-      // 7. Log successful extraction to database
-      extractionLogId = await extractionService.logExtractionAttempt(DEFAULT_USER_ID, text, extractedData);
+    try {
+      extractionResult = await extractionService.extractFromText(text);
+      const generationDuration = Date.now() - startTime;
+
+      // Sprawdź czy są krytyczne błędy (brak składników lub kroków)
+      if (extractionResult.hasErrors) {
+        // Log failed extraction attempt
+        extractionLogId = await extractionService.logExtractionAttempt(
+          DEFAULT_USER_ID,
+          text,
+          null,
+          `Krytyczne błędy walidacji: ${extractionResult.warnings.join(", ")}`,
+          null,
+          generationDuration
+        );
+
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: "AI_EXTRACTION_ERROR",
+              message:
+                "Nie udało się wyekstraktować kluczowych danych przepisu z podanego tekstu. Sprawdź czy tekst zawiera przepis kulinarny.",
+              details: {
+                warnings: extractionResult.warnings.join("; "),
+              },
+            },
+          } as ErrorResponseDTO),
+          {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // 7. Log successful extraction to database (nawet z ostrzeżeniami)
+      extractionLogId = await extractionService.logExtractionAttempt(
+        DEFAULT_USER_ID,
+        text,
+        extractionResult.data,
+        extractionResult.warnings.length > 0 ? `Ostrzeżenia: ${extractionResult.warnings.join(", ")}` : null,
+        null, // tokens will be available in future update
+        generationDuration
+      );
 
       // 8. Increment daily extraction counter
       await extractionService.incrementDailyCount(DEFAULT_USER_ID);
     } catch (error) {
       console.error("Error during AI extraction:", error);
+      const generationDuration = Date.now() - startTime;
 
       // Log failed extraction attempt
       try {
@@ -126,22 +167,58 @@ export const POST: APIRoute = async ({ request }) => {
           DEFAULT_USER_ID,
           text,
           null,
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : "Unknown error",
+          null,
+          generationDuration
         );
       } catch (logError) {
         console.error("Error logging failed extraction:", logError);
         // Continue with original error response even if logging fails
       }
 
+      // Return appropriate error based on the type of error
+      if (error instanceof Error) {
+        if (error.message.includes("klucz API") || error.message.includes("OPENROUTER_API_KEY")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "AI_SERVICE_ERROR",
+                message: "Serwis AI jest tymczasowo niedostępny. Spróbuj ponownie za chwilę.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 503,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("limit") || error.message.includes("rate")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "AI_SERVICE_ERROR",
+                message: "Serwis AI jest przeciążony. Spróbuj ponownie za chwilę.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 429,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
+
       return new Response(
         JSON.stringify({
           error: {
             code: "AI_SERVICE_ERROR",
-            message: "Temporary error in extraction service",
+            message:
+              "Nie udało się przetworzyć tekstu przepisu. Sprawdź czy tekst zawiera przepis kulinarny i spróbuj ponownie.",
           },
         } as ErrorResponseDTO),
         {
-          status: 500,
+          status: 422,
           headers: { "Content-Type": "application/json" },
         }
       );
@@ -150,8 +227,9 @@ export const POST: APIRoute = async ({ request }) => {
     // 9. Prepare response
     const response: ExtractFromTextResponseDTO = {
       extraction_log_id: extractionLogId,
-      extracted_data: extractedData,
+      extracted_data: extractionResult.data,
       original_text: text,
+      warnings: extractionResult.warnings.length > 0 ? extractionResult.warnings : undefined,
     };
 
     return new Response(JSON.stringify(response), {
