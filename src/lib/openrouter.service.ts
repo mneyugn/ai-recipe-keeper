@@ -40,7 +40,7 @@ export class OpenRouterService {
     // Inicjalizacja pól
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || "https://openrouter.ai/api/v1";
-    this.defaultModel = config.defaultModel || "anthropic/claude-3.5-sonnet";
+    this.defaultModel = config.defaultModel || "google/gemini-2.0-flash-exp:free";
     this.timeout = config.timeout || 30000;
 
     // Konfiguracja retry logic

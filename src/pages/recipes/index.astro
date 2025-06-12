@@ -27,9 +27,5 @@ if (initialParams.sort && !validSortOptions.includes(initialParams.sort)) {
 ---
 
 <AppLayout title="Moje Przepisy - AI RecipeKeeper">
-  <main class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <div class="container mx-auto px-4 py-8">
-      <RecipeListContainer initialParams={initialParams} userId={userId} client:load />
-    </div>
-  </main>
+  <RecipeListContainer initialParams={initialParams} userId={userId} client:load />
 </AppLayout>

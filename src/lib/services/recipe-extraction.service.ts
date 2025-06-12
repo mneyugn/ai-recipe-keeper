@@ -94,7 +94,7 @@ export class RecipeExtractionService {
     const config: OpenRouterConfig = {
       apiKey: import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "",
       baseUrl: "https://openrouter.ai/api/v1",
-      defaultModel: "anthropic/claude-3.5-sonnet",
+      defaultModel: "google/gemini-2.0-flash-001",
       timeout: 60000, // 60 sekund dla dłuższych requestów
       maxRetries: 2,
       retryDelay: 2000,

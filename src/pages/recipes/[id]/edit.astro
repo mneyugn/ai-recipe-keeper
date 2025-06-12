@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-import MainLayout from "@/layouts/Layout.astro";
+import AppLayout from "@/layouts/AppLayout.astro";
 import RecipeForm from "@/components/RecipeForm.tsx";
 import type { RecipeDetailDTO } from "@/types";
 // TODO: Import UserProfileDTO and check if user is authenticated
@@ -44,7 +44,7 @@ if (error && !recipeData) {
 }
 ---
 
-<MainLayout title={recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}>
+<AppLayout title={recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}>
   <div class="container mx-auto py-8">
     <h1 class="text-3xl font-bold mb-6">
       {recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}
@@ -53,4 +53,4 @@ if (error && !recipeData) {
     <RecipeForm client:load mode="edit" recipeId={recipeId} recipeData={recipeData} />
     {error && <p class="text-red-500">{error}</p>}
   </div>
-</MainLayout>
+</AppLayout>

@@ -104,7 +104,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
   };
 
   const [formData, setFormData] = useState<RecipeFormData>(initialFormData);
-  const [currentMode, setCurrentMode] = useState<"manual" | "text" | "url">("manual");
+  const [currentMode, setCurrentMode] = useState<"manual" | "text" | "url">("url");
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -468,14 +468,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Mode selection (Tabs) */}
       <Tabs
-        defaultValue="manual"
+        defaultValue="url"
         value={currentMode}
         onValueChange={(value) => setCurrentMode(value as "manual" | "text" | "url")}
       >
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="manual">Manualne dodawanie</TabsTrigger>
-          <TabsTrigger value="text">Wklej tekst</TabsTrigger>
           <TabsTrigger value="url">Importuj z URL</TabsTrigger>
+          <TabsTrigger value="text">Wklej tekst</TabsTrigger>
+          <TabsTrigger value="manual">Manualne dodawanie</TabsTrigger>
         </TabsList>
 
         {/* Manual Mode Tab */}
