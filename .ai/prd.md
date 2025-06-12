@@ -67,7 +67,8 @@ Główne typy przepisów, które użytkownicy chcą digitalizować, to:
 
 ### 3.5. Prosty system kont użytkowników (auth)
 
-- Rejestracja: Użytkownik może założyć nowe konto podając adres e-mail lub nazwę użytkownika oraz hasło. Możliwe jest użycie gotowego narzędzia do autentykacji. Potwierdzenie adresu e-mail nie jest wymagane w MVP.
+- Rejestracja: Użytkownik może założyć nowe konto podając adres e-mail lub nazwę użytkownika oraz hasło. Użyjemy gotowego narzędzia do autentykacji - Supabase Auth. Potwierdzenie adresu e-mail nie jest wymagane w MVP.
+- Aby korzystać z aplikacji, użytkownik musi być zalogowany.
 - Logowanie: Zarejestrowany użytkownik może zalogować się do systemu przy użyciu swoich danych uwierzytelniających.
 - Zapomniałem hasła: Użytkownik ma możliwość zresetowania zapomnianego hasła.
 - Wszystkie przepisy dodane przez użytkownika są w 100% prywatne i dostępne tylko dla niego po zalogowaniu. Nie ma funkcji udostępniania przepisów innym użytkownikom w MVP.
@@ -118,13 +119,13 @@ Tytuł: Rejestracja nowego użytkownika
 Opis: Jako nowy użytkownik, chcę móc zarejestrować konto używając adresu email/nazwy użytkownika i hasła, abym mógł przechowywać swoje przepisy prywatnie.
 Kryteria akceptacji:
 
-1. Użytkownik może przejść do formularza rejestracji ze strony głównej lub strony logowania.
+1. Użytkownik może przejść do formularza rejestracji ze strony logowania.
 2. Formularz rejestracji wymaga podania unikalnego adresu email lub nazwy użytkownika oraz hasła.
 3. Hasło musi być wpisane dwukrotnie w celu potwierdzenia jego poprawności.
 4. System validuje format adresu email (jeśli email jest używany jako identyfikator).
 5. System sprawdza, czy podany adres email/nazwa użytkownika nie jest już zarejestrowany w systemie.
 6. Po pomyślnym wypełnieniu i przesłaniu formularza, konto użytkownika jest tworzone.
-7. Użytkownik jest informowany o pomyślnej rejestracji i może zostać automatycznie zalogowany lub przekierowany na stronę logowania.
+7. Użytkownik jest informowany o pomyślnej rejestracji i zostaje automatycznie zalogowany i przekierowany na stronę główną.
 8. W przypadku błędów (np. zajęty email/nazwa użytkownika, niepasujące hasła, niepoprawny format email), użytkownik widzi czytelne komunikaty błędów przy odpowiednich polach formularza.
 
 ID: US-002
@@ -133,9 +134,9 @@ Tytuł: Logowanie do systemu
 Opis: Jako zarejestrowany użytkownik, chcę móc zalogować się do aplikacji używając mojego adresu email/nazwy użytkownika i hasła, abym miał dostęp do moich zapisanych przepisów.
 Kryteria akceptacji:
 
-1. Użytkownik może przejść do formularza logowania ze strony głównej.
+1. Użytkownik może przejść do formularza logowania ze strony głównej (przekierowanie z głównej strony).
 2. Formularz logowania wymaga podania adresu email/nazwy użytkownika oraz hasła.
-3. Po pomyślnym uwierzytelnieniu, użytkownik jest przekierowywany do panelu głównego (np. listy swoich przepisów).
+3. Po pomyślnym uwierzytelnieniu, użytkownik jest przekierowywany do panelu głównego (listy swoich przepisów).
 4. W przypadku podania niepoprawnych danych logowania, użytkownik widzi stosowny komunikat błędu.
 5. System zapewnia podstawowe zabezpieczenia przed atakami typu brute-force (np. limit prób logowania - poza MVP, ale warto wspomnieć o standardach bezpieczeństwa).
 
