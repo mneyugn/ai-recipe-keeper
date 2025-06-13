@@ -1,0 +1,70 @@
+---
+import Layout from "./Layout.astro";
+
+export interface Props {
+  title?: string;
+  showRegisterLink?: boolean;
+  showLoginLink?: boolean;
+}
+
+const { title = "AI RecipeKeeper", showRegisterLink = false, showLoginLink = false } = Astro.props;
+---
+
+<Layout title={title}>
+  <div class="min-h-screen bg-background flex flex-col">
+    <!-- Header -->
+    <header class="py-6 px-4">
+      <div class="container mx-auto max-w-md">
+        <div class="flex items-center justify-between">
+          <!-- Logo -->
+          <a href="/" class="text-2xl font-bold text-primary"> 🍽️ AI RecipeKeeper </a>
+
+          <!-- Navigation Links -->
+          <div class="text-sm">
+            {
+              showRegisterLink && (
+                <span class="text-muted-foreground">
+                  Nie masz konta?{" "}
+                  <a href="/auth/register" class="text-primary hover:underline font-medium">
+                    Zarejestruj się
+                  </a>
+                </span>
+              )
+            }
+            {
+              showLoginLink && (
+                <span class="text-muted-foreground">
+                  Masz konto?{" "}
+                  <a href="/auth/login" class="text-primary hover:underline font-medium">
+                    Zaloguj się
+                  </a>
+                </span>
+              )
+            }
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center px-4 py-8">
+      <div class="w-full max-w-md">
+        <slot />
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-6 px-4 text-center">
+      <p class="text-sm text-muted-foreground">© 2024 AI RecipeKeeper. Wszystkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+</Layout>
+
+<style>
+  /* Dodatkowe style dla autentykacji */
+  main {
+    background:
+      radial-gradient(circle at 25% 25%, hsl(var(--primary) / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, hsl(var(--secondary) / 0.1) 0%, transparent 50%);
+  }
+</style>

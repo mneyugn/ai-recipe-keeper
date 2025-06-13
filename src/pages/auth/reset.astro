@@ -1,0 +1,8 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import { ResetRequestForm } from "@/components/auth/ResetRequestForm";
+---
+
+<AuthLayout title="Resetuj hasło - AI RecipeKeeper" showLoginLink={true}>
+  <ResetRequestForm client:load />
+</AuthLayout>

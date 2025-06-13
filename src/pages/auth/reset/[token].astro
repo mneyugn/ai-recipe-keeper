@@ -1,0 +1,11 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+
+// Pobierz token z parametrów URL
+const { token } = Astro.params;
+---
+
+<AuthLayout title="Ustaw nowe hasło - AI RecipeKeeper">
+  <ResetPasswordForm client:load token={token} />
+</AuthLayout>
