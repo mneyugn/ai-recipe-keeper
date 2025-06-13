@@ -1,5 +1,5 @@
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import { supabaseClient, DEFAULT_USER_ID } from "../../db/supabase.client";
+import { supabaseClient } from "../../db/supabase.client";
 import type { Database, Json } from "../../db/database.types";
 import { OpenRouterService } from "../openrouter.service";
 import type { OpenRouterConfig, ChatCompletionRequest, ResponseFormat } from "../../types";
@@ -118,7 +118,7 @@ export class RecipeExtractionService {
    * @returns Promise<string> - UUID of created log entry
    */
   async logExtractionAttempt(
-    userId: string = DEFAULT_USER_ID,
+    userId: string,
     inputText: string,
     extractedData: ExtractedRecipeDataDTO | null = null,
     errorMessage: string | null = null,
@@ -155,7 +155,7 @@ export class RecipeExtractionService {
    * @param userId - UUID of the user to check
    * @returns Promise<boolean> - true if under limit, false if exceeded
    */
-  async checkDailyLimit(userId: string = DEFAULT_USER_ID): Promise<boolean> {
+  async checkDailyLimit(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabaseClient.rpc("check_extraction_limit", {
         p_user_id: userId,
@@ -178,7 +178,7 @@ export class RecipeExtractionService {
    * @param userId - UUID of the user
    * @returns Promise<void>
    */
-  async incrementDailyCount(userId: string = DEFAULT_USER_ID): Promise<void> {
+  async incrementDailyCount(userId: string): Promise<void> {
     try {
       const { error } = await supabaseClient.rpc("increment_extraction_count", {
         p_user_id: userId,

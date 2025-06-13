@@ -4,43 +4,41 @@ export const prerender = false;
 import AppLayout from "@/layouts/AppLayout.astro";
 import RecipeForm from "@/components/RecipeForm.tsx";
 import type { RecipeDetailDTO } from "@/types";
-// TODO: Import UserProfileDTO and check if user is authenticated
-// TODO: Redirect to login if not authenticated
-// TODO: Implement actual API call to fetch recipe data
+import { RecipeService } from "@/lib/services/recipe.service";
 
 const { id: recipeId } = Astro.params;
-// TODO: Authentication check (user = Astro.locals.user)
-// if (!user) { return Astro.redirect("/signin"); }
+
+// Sprawdzenie autentyfikacji
+const { user } = Astro.locals;
+const userId = user?.id;
+
+if (!userId) {
+  return Astro.redirect("/auth/login");
+}
 
 let recipeData: RecipeDetailDTO | null = null;
 let error: string | null = null;
 
 if (recipeId) {
   try {
-    const response = await fetch(`${Astro.url.origin}/api/recipes/${recipeId}`);
+    const supabase = Astro.locals.supabase;
+    const recipeService = new RecipeService(supabase);
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        error = "Nie znaleziono przepisu.";
-      } else {
-        error = "Wystąpił błąd podczas pobierania danych przepisu.";
-      }
-    } else {
-      recipeData = (await response.json()) as RecipeDetailDTO;
-    }
+    recipeData = await recipeService.getRecipeDetails(recipeId, userId);
   } catch (e) {
     console.error("Error fetching recipe:", e);
-    error = "Wystąpił problem podczas ładowania przepisu.";
+
+    if (e instanceof Error) {
+      if (e.message.includes("nie został znaleziony") || e.message.includes("Brak uprawnień")) {
+        return Astro.redirect("/recipes");
+      }
+      error = e.message;
+    } else {
+      error = "Wystąpił problem podczas ładowania przepisu.";
+    }
   }
 } else {
   error = "Brak ID przepisu do edycji.";
-}
-
-if (error && !recipeData) {
-  // If there's an error and no recipe data,
-  // consider redirecting or showing a more prominent error message.
-  // For now, we'll pass the error to the layout/page to display.
-  // return Astro.redirect('/recipes?error=not_found'); // Example redirect
 }
 ---
 

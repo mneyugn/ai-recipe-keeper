@@ -11,8 +11,6 @@ export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKe
 
 export type SupabaseClient = typeof supabaseClient;
 
-export const DEFAULT_USER_ID = "0176e9b3-148f-4c12-b60c-b6c4342ba67e";
-
 // Server-side Supabase client configuration
 export const cookieOptions: CookieOptionsWithName = {
   path: "/",

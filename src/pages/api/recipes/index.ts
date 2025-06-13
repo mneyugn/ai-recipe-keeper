@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { RecipeService } from "../../../lib/services/recipe.service";
 import { validateRecipeListQuery, validateCreateRecipeCommand } from "../../../lib/validations/recipe";
 import type { RecipeListResponseDTO, RecipeDetailDTO, ErrorResponseDTO } from "../../../types";
-import { DEFAULT_USER_ID, supabaseClient } from "../../../db/supabase.client";
+import { supabaseClient } from "../../../db/supabase.client";
 import { ZodError } from "zod";
 
 export const prerender = false;
@@ -11,9 +11,26 @@ export const prerender = false;
  * GET /api/recipes
  * Pobiera listę przepisów użytkownika z opcjami filtrowania i paginacji
  */
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
-    // 1. Walidacja query parametrów
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Walidacja query parametrów
     let validatedParams;
     try {
       validatedParams = validateRecipeListQuery(url.searchParams);
@@ -34,13 +51,13 @@ export const GET: APIRoute = async ({ url }) => {
       );
     }
 
-    // 2. Inicjalizacja serwisu
+    // 3. Inicjalizacja serwisu
     const recipeService = new RecipeService(supabaseClient);
 
-    // 3. Pobieranie listy przepisów
+    // 4. Pobieranie listy przepisów
     let recipeList: RecipeListResponseDTO;
     try {
-      recipeList = await recipeService.getRecipeList(DEFAULT_USER_ID, validatedParams);
+      recipeList = await recipeService.getRecipeList(userId, validatedParams);
     } catch (error) {
       console.error("Błąd podczas pobierania listy przepisów:", error);
       return new Response(
@@ -83,9 +100,26 @@ export const GET: APIRoute = async ({ url }) => {
  * POST /api/recipes
  * Tworzy nowy przepis
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // 1. Walidacja Content-Type
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Walidacja Content-Type
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       return new Response(
@@ -145,10 +179,10 @@ export const POST: APIRoute = async ({ request }) => {
     // 4. Inicjalizacja serwisu
     const recipeService = new RecipeService(supabaseClient);
 
-    // 5. Tworzenie przepisu
+    // 6. Tworzenie przepisu
     let createdRecipe: RecipeDetailDTO;
     try {
-      createdRecipe = await recipeService.createRecipe(DEFAULT_USER_ID, validatedCommand);
+      createdRecipe = await recipeService.createRecipe(userId, validatedCommand);
     } catch (error) {
       console.error("Błąd podczas tworzenia przepisu:", error);
 

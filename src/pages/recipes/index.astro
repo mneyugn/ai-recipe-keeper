@@ -1,11 +1,15 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import RecipeListContainer from "../../components/RecipeListContainer";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
 import type { RecipeListQueryParams } from "../../types";
 
-// Używamy domyślnego user ID na razie (autentykacja będzie dodana później)
-const userId = DEFAULT_USER_ID;
+// Pobieranie user ID z middleware (autentyfikacja sprawdzona w middleware)
+const { user } = Astro.locals;
+const userId = user?.id;
+
+if (!userId) {
+  return Astro.redirect("/auth/login");
+}
 
 // Parsowanie parametrów URL
 const url = new URL(Astro.request.url);

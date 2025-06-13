@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { extractFromTextSchema } from "../../../lib/validations/recipe-extraction";
 import { RecipeExtractionService } from "../../../lib/services/recipe-extraction.service";
 import type { ExtractFromTextResponseDTO, ErrorResponseDTO } from "../../../types";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 export const prerender = false;
 
@@ -10,9 +9,26 @@ export const prerender = false;
  * POST /api/recipe/extract-from-text
  * Extracts recipe data from unstructured text using AI and returns structured data
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // 1. Validation of Content-Type
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Validation of Content-Type
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       return new Response(
@@ -29,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 2. Parse JSON
+    // 3. Parse JSON
     let requestBody;
     try {
       requestBody = await request.json();
@@ -48,7 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 3. Validation of request body using Zod
+    // 4. Validation of request body using Zod
     const validationResult = extractFromTextSchema.safeParse(requestBody);
     if (!validationResult.success) {
       const firstError = validationResult.error.errors[0];
@@ -68,13 +84,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     const { text } = validationResult.data;
 
-    // 4. Initialize recipe extraction service
+    // 5. Initialize recipe extraction service
     const extractionService = new RecipeExtractionService();
 
-    // 5. Check daily extraction limit
+    // 6. Check daily extraction limit
     let isUnderLimit;
     try {
-      isUnderLimit = await extractionService.checkDailyLimit(DEFAULT_USER_ID);
+      isUnderLimit = await extractionService.checkDailyLimit(userId);
     } catch (error) {
       console.error("Error checking daily limit:", error);
       return new Response(
@@ -106,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 6. Extract recipe data from text using AI
+    // 7. Extract recipe data from text using AI
     let extractionResult;
     let extractionLogId;
     const startTime = Date.now();
@@ -119,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (extractionResult.hasErrors) {
         // Log failed extraction attempt
         extractionLogId = await extractionService.logExtractionAttempt(
-          DEFAULT_USER_ID,
+          userId,
           text,
           null,
           `Krytyczne błędy walidacji: ${extractionResult.warnings.join(", ")}`,
@@ -145,9 +161,9 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
 
-      // 7. Log successful extraction to database (nawet z ostrzeżeniami)
+      // 8. Log successful extraction to database (nawet z ostrzeżeniami)
       extractionLogId = await extractionService.logExtractionAttempt(
-        DEFAULT_USER_ID,
+        userId,
         text,
         extractionResult.data,
         extractionResult.warnings.length > 0 ? `Ostrzeżenia: ${extractionResult.warnings.join(", ")}` : null,
@@ -155,8 +171,8 @@ export const POST: APIRoute = async ({ request }) => {
         generationDuration
       );
 
-      // 8. Increment daily extraction counter
-      await extractionService.incrementDailyCount(DEFAULT_USER_ID);
+      // 9. Increment daily extraction counter
+      await extractionService.incrementDailyCount(userId);
     } catch (error) {
       console.error("Error during AI extraction:", error);
       const generationDuration = Date.now() - startTime;
@@ -164,7 +180,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Log failed extraction attempt
       try {
         extractionLogId = await extractionService.logExtractionAttempt(
-          DEFAULT_USER_ID,
+          userId,
           text,
           null,
           error instanceof Error ? error.message : "Unknown error",
@@ -224,7 +240,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 9. Prepare response
+    // 10. Prepare response
     const response: ExtractFromTextResponseDTO = {
       extraction_log_id: extractionLogId,
       extracted_data: extractionResult.data,

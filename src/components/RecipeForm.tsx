@@ -291,6 +291,12 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
           setFormErrors({
             urlToImport: errorData.error?.message || "Nieprawidłowy URL",
           });
+        } else if (response.status === 403) {
+          setFormErrors({
+            api:
+              errorData.error?.message ||
+              "Strona blokuje automatyczne pobieranie treści. Spróbuj skopiować tekst przepisu i użyć opcji 'Importuj z tekstu'.",
+          });
         } else if (response.status === 422) {
           setFormErrors({
             api: "Nie udało się pobrać przepisu z podanego URL. Sprawdź czy adres jest poprawny i spróbuj ponownie.",

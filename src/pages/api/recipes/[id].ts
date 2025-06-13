@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { RecipeService } from "../../../lib/services/recipe.service";
 import { validateRecipeId, validateUpdateRecipeCommand } from "../../../lib/validations/recipe";
 import type { RecipeDetailDTO, ErrorResponseDTO } from "../../../types";
-import { DEFAULT_USER_ID, supabaseClient } from "../../../db/supabase.client";
+import { supabaseClient } from "../../../db/supabase.client";
 import { ZodError } from "zod";
 
 export const prerender = false;
@@ -11,9 +11,26 @@ export const prerender = false;
  * GET /api/recipes/[id]
  * Pobiera szczegóły konkretnego przepisu
  */
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, locals }) => {
   try {
-    // 1. Walidacja ID przepisu
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Walidacja ID przepisu
     const { id } = params;
     if (!id) {
       return new Response(
@@ -49,13 +66,13 @@ export const GET: APIRoute = async ({ params }) => {
       );
     }
 
-    // 2. Inicjalizacja serwisu
+    // 3. Inicjalizacja serwisu
     const recipeService = new RecipeService(supabaseClient);
 
-    // 3. Pobieranie szczegółów przepisu
+    // 4. Pobieranie szczegółów przepisu
     let recipeDetails: RecipeDetailDTO;
     try {
-      recipeDetails = await recipeService.getRecipeDetails(validatedId, DEFAULT_USER_ID);
+      recipeDetails = await recipeService.getRecipeDetails(validatedId, userId);
     } catch (error) {
       console.error("Błąd podczas pobierania szczegółów przepisu:", error);
 
@@ -116,9 +133,26 @@ export const GET: APIRoute = async ({ params }) => {
  * PUT /api/recipes/[id]
  * Aktualizuje istniejący przepis
  */
-export const PUT: APIRoute = async ({ params, request }) => {
+export const PUT: APIRoute = async ({ params, request, locals }) => {
   try {
-    // 1. Walidacja ID przepisu
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Walidacja ID przepisu
     const { id } = params;
     if (!id) {
       return new Response(
@@ -154,7 +188,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // 2. Walidacja Content-Type
+    // 3. Walidacja Content-Type
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       return new Response(
@@ -171,7 +205,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // 3. Parsowanie JSON
+    // 4. Parsowanie JSON
     let requestBody;
     try {
       requestBody = await request.json();
@@ -190,7 +224,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // 4. Walidacja danych wejściowych
+    // 5. Walidacja danych wejściowych
     let validatedCommand;
     try {
       validatedCommand = validateUpdateRecipeCommand(requestBody);
@@ -211,13 +245,13 @@ export const PUT: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // 5. Inicjalizacja serwisu
+    // 6. Inicjalizacja serwisu
     const recipeService = new RecipeService(supabaseClient);
 
-    // 6. Aktualizacja przepisu
+    // 7. Aktualizacja przepisu
     let updatedRecipe: RecipeDetailDTO;
     try {
-      updatedRecipe = await recipeService.updateRecipe(validatedId, DEFAULT_USER_ID, validatedCommand);
+      updatedRecipe = await recipeService.updateRecipe(validatedId, userId, validatedCommand);
     } catch (error) {
       console.error("Błąd podczas aktualizacji przepisu:", error);
 
@@ -267,7 +301,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // 7. Zwrócenie zaktualizowanego przepisu
+    // 8. Zwrócenie zaktualizowanego przepisu
     return new Response(JSON.stringify(updatedRecipe), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -293,9 +327,26 @@ export const PUT: APIRoute = async ({ params, request }) => {
  * DELETE /api/recipes/[id]
  * Usuwa przepis
  */
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, locals }) => {
   try {
-    // 1. Walidacja ID przepisu
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        } as ErrorResponseDTO),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Walidacja ID przepisu
     const { id } = params;
     if (!id) {
       return new Response(
@@ -331,12 +382,12 @@ export const DELETE: APIRoute = async ({ params }) => {
       );
     }
 
-    // 2. Inicjalizacja serwisu
+    // 3. Inicjalizacja serwisu
     const recipeService = new RecipeService(supabaseClient);
 
-    // 3. Usunięcie przepisu
+    // 4. Usunięcie przepisu
     try {
-      await recipeService.deleteRecipe(validatedId, DEFAULT_USER_ID);
+      await recipeService.deleteRecipe(validatedId, userId);
     } catch (error) {
       console.error("Błąd podczas usuwania przepisu:", error);
 
@@ -371,7 +422,7 @@ export const DELETE: APIRoute = async ({ params }) => {
       );
     }
 
-    // 4. Zwrócenie pustej odpowiedzi (204 No Content)
+    // 5. Zwrócenie pustej odpowiedzi (204 No Content)
     return new Response(null, {
       status: 204,
     });

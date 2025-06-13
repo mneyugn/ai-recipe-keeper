@@ -1,15 +1,17 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
 import { ProfileContainer } from "../components/ProfileContainer";
-import { DEFAULT_USER_ID } from "../db/supabase.client";
-
 // Server-side auth check (middleware już sprawdził autentykację)
 const { locals } = Astro;
 const supabase = locals.supabase;
 const user = locals.user;
 
 // Middleware już przekierowuje niezalogowanych użytkowników
-const userId = user?.id || DEFAULT_USER_ID;
+const userId = user?.id;
+
+if (!userId) {
+  return Astro.redirect("/auth/login");
+}
 
 // Verify user exists and is active
 const { data: dbUser } = await supabase.from("users").select("id, email, username").eq("id", userId).single();

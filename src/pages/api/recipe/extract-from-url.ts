@@ -3,7 +3,6 @@ import { z } from "zod";
 import type { ExtractFromUrlResponseDTO, ErrorResponseDTO } from "../../../types";
 import { RecipeExtractionService } from "../../../lib/services/recipe-extraction.service";
 import { UrlScraperService } from "../../../lib/services/url-scraper.service";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 
 const extractFromUrlSchema = z.object({
   url: z
@@ -25,9 +24,27 @@ export const prerender = false;
  * POST /api/recipe/extract-from-url
  * Extracts recipe data from a supported URL using web scraping and AI
  */
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // 1. Validation of Content-Type
+    // 1. Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "authentication_required",
+            message: "Wymagana autentyfikacja",
+          },
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // 2. Validation of Content-Type
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       return new Response(
@@ -90,7 +107,7 @@ export const POST: APIRoute = async ({ request }) => {
     // 5. Check daily extraction limit
     let isUnderLimit;
     try {
-      isUnderLimit = await extractionService.checkDailyLimit(DEFAULT_USER_ID);
+      isUnderLimit = await extractionService.checkDailyLimit(userId);
     } catch (error) {
       console.error("Error checking daily limit:", error);
       return new Response(
@@ -135,7 +152,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (extractionResult.hasErrors) {
         // Log failed extraction attempt
         extractionLogId = await extractionService.logExtractionAttempt(
-          DEFAULT_USER_ID,
+          userId,
           url,
           null,
           `Krytyczne błędy walidacji: ${extractionResult.warnings.join(", ")}`,
@@ -163,7 +180,7 @@ export const POST: APIRoute = async ({ request }) => {
 
       // 7. Log successful extraction to database (nawet z ostrzeżeniami)
       extractionLogId = await extractionService.logExtractionAttempt(
-        DEFAULT_USER_ID,
+        userId,
         url, // URL jako input data
         extractionResult.data,
         extractionResult.warnings.length > 0 ? `Ostrzeżenia: ${extractionResult.warnings.join(", ")}` : null,
@@ -172,7 +189,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
 
       // 8. Increment daily extraction counter
-      await extractionService.incrementDailyCount(DEFAULT_USER_ID);
+      await extractionService.incrementDailyCount(userId);
     } catch (error) {
       console.error("Error during URL extraction:", error);
       const generationDuration = Date.now() - startTime;
@@ -180,7 +197,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Log failed extraction attempt
       try {
         extractionLogId = await extractionService.logExtractionAttempt(
-          DEFAULT_USER_ID,
+          userId,
           url,
           null,
           error instanceof Error ? error.message : "Unknown error",
@@ -234,6 +251,22 @@ export const POST: APIRoute = async ({ request }) => {
             } as ErrorResponseDTO),
             {
               status: 504,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        if (error.message.includes("HTTP 403") || error.message.includes("Forbidden")) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: "ACCESS_DENIED",
+                message:
+                  "Strona blokuje automatyczne pobieranie treści. Spróbuj skopiować tekst przepisu i użyć opcji 'Importuj z tekstu'.",
+              },
+            } as ErrorResponseDTO),
+            {
+              status: 403,
               headers: { "Content-Type": "application/json" },
             }
           );

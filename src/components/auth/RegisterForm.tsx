@@ -5,15 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
+import { authService } from "@/lib/services/auth.service";
+import { registerSchema, type RegisterFormData } from "@/lib/validations/auth.validation";
+import { z } from "zod";
 
 interface RegisterFormProps {
   className?: string;
-}
-
-interface RegisterFormData {
-  email: string;
-  password: string;
-  confirmPassword: string;
 }
 
 interface FormErrors {
@@ -33,31 +30,22 @@ export function RegisterForm({ className }: RegisterFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Walidacja email
-    if (!formData.email) {
-      newErrors.email = "Email jest wymagany";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Nieprawidłowy format email";
+    try {
+      registerSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: FormErrors = {};
+        error.errors.forEach((err) => {
+          if (err.path[0] === "email" || err.path[0] === "password" || err.path[0] === "confirmPassword") {
+            newErrors[err.path[0] as keyof FormErrors] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
     }
-
-    // Walidacja hasła
-    if (!formData.password) {
-      newErrors.password = "Hasło jest wymagane";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Hasło musi mieć co najmniej 8 znaków";
-    }
-
-    // Walidacja potwierdzenia hasła
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Potwierdzenie hasła jest wymagane";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Hasła nie są zgodne";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,27 +59,29 @@ export function RegisterForm({ className }: RegisterFormProps) {
     setIsLoading(true);
 
     try {
-      // TODO: Implementacja wywołania auth.service.register
-      console.log("Register attempt:", {
-        email: formData.email,
-        password: formData.password,
-      });
+      const result = await authService.register(formData);
 
-      // Symulacja błędu lub sukcesu
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Po sukcesie - automatycznie zaloguj i przekieruj do /recipes
-      // window.location.href = "/recipes";
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        if (error.message?.includes("User already registered")) {
-          setGlobalError("Użytkownik z tym adresem email już istnieje");
-        } else {
-          setGlobalError("Wystąpił błąd podczas rejestracji. Spróbuj ponownie.");
-        }
-      } else {
-        setGlobalError("Wystąpił nieznany błąd. Spróbuj ponownie.");
+      if (result.error) {
+        setGlobalError(result.error);
+        return;
       }
+
+      if (result.success) {
+        if (result.message) {
+          // Pokazujemy komunikat o potwierdzeniu email jeśli potrzeba
+          setGlobalError(null);
+          // Można dodać komponente sukcesu tutaj
+          alert(result.message);
+          if (result.redirectTo) {
+            window.location.href = result.redirectTo;
+          }
+        } else {
+          // Przekierowanie bezpośrednio po sukcesie
+          window.location.href = result.redirectTo || "/recipes";
+        }
+      }
+    } catch {
+      setGlobalError("Wystąpił błąd połączenia. Spróbuj ponownie.");
     } finally {
       setIsLoading(false);
     }

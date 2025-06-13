@@ -1,14 +1,30 @@
 import type { APIRoute } from "astro";
 import { UserService } from "../../../lib/services/user.service";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
 import type { UserProfileDTO, ErrorResponseDTO } from "../../../types";
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    // Używanie DEFAULT_USER_ID zamiast autoryzacji
-    const userId = DEFAULT_USER_ID;
+    // Sprawdzenie autentyfikacji
+    const userId = locals.user?.id;
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Wymagana autentyfikacja",
+          },
+        } satisfies ErrorResponseDTO),
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
 
     // Sprawdzenie czy Supabase client jest dostępny w locals
     if (!locals.supabase) {

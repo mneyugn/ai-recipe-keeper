@@ -1,6 +1,7 @@
 ---
 import AppLayout from "../../../layouts/AppLayout.astro";
-import type { RecipeDetailDTO, ErrorResponseDTO } from "../../../types";
+import type { RecipeDetailDTO } from "../../../types";
+import { RecipeService } from "../../../lib/services/recipe.service";
 
 export const prerender = false;
 
@@ -11,26 +12,34 @@ if (!id) {
   return Astro.redirect("/recipes");
 }
 
+// Sprawdzenie autentifikacji
+const { user } = Astro.locals;
+const userId = user?.id;
+
+if (!userId) {
+  return Astro.redirect("/auth/login");
+}
+
 // Pobieranie szczegółów przepisu
 let recipe: RecipeDetailDTO | null = null;
 let error: string | null = null;
 
 try {
-  const response = await fetch(`${Astro.url.origin}/api/recipes/${id}`);
+  const supabase = Astro.locals.supabase;
+  const recipeService = new RecipeService(supabase);
 
-  if (response.ok) {
-    recipe = await response.json();
-  } else {
-    const errorData: ErrorResponseDTO = await response.json();
-    error = errorData.error.message;
-
-    if (response.status === 404) {
-      return Astro.redirect("/recipes");
-    }
-  }
+  recipe = await recipeService.getRecipeDetails(id, userId);
 } catch (e) {
   console.error("Błąd podczas pobierania przepisu:", e);
-  error = "Błąd podczas ładowania przepisu";
+
+  if (e instanceof Error) {
+    if (e.message.includes("nie został znaleziony") || e.message.includes("Brak uprawnień")) {
+      return Astro.redirect("/recipes");
+    }
+    error = e.message;
+  } else {
+    error = "Błąd podczas ładowania przepisu";
+  }
 }
 ---
 
