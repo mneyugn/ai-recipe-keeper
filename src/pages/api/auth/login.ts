@@ -1,19 +1,28 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
+import { loginSchema } from "../../../lib/validations/auth.validation";
+import { z } from "zod";
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
 
-    // Podstawowa walidacja
-    if (!email || !password) {
-      return new Response(JSON.stringify({ error: "Email i hasło są wymagane" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    // Walidacja Zod
+    try {
+      loginSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessage = error.errors.map((err) => err.message).join(", ");
+        return new Response(JSON.stringify({ error: errorMessage }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
+
+    const { email, password } = body;
 
     const supabase = createSupabaseServerInstance({
       cookies,

@@ -1,23 +1,10 @@
 // Auth service - API wrapper używany przez komponenty React
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  confirmPassword?: string;
-}
-
-interface ResetRequestData {
-  email: string;
-}
-
-interface ResetConfirmData {
-  token: string;
-  newPassword: string;
-}
+import type {
+  LoginFormData,
+  RegisterFormData,
+  ResetRequestFormData,
+  ResetConfirmFormData,
+} from "../validations/auth.validation";
 
 interface AuthResponse {
   success?: boolean;
@@ -56,19 +43,19 @@ async function fetchJson(url: string, data?: unknown): Promise<AuthResponse> {
 }
 
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  login: async (credentials: LoginFormData): Promise<AuthResponse> => {
     return fetchJson("/api/auth/login", credentials);
   },
 
-  register: async (data: RegisterData): Promise<AuthResponse> => {
+  register: async (data: RegisterFormData): Promise<AuthResponse> => {
     return fetchJson("/api/auth/register", data);
   },
 
-  requestReset: async (data: ResetRequestData): Promise<AuthResponse> => {
+  requestReset: async (data: ResetRequestFormData): Promise<AuthResponse> => {
     return fetchJson("/api/auth/reset", data);
   },
 
-  confirmReset: async (data: ResetConfirmData): Promise<AuthResponse> => {
+  confirmReset: async (data: ResetConfirmFormData): Promise<AuthResponse> => {
     return fetchJson("/api/auth/reset-confirm", data);
   },
 

@@ -6,14 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
 import { authService } from "@/lib/services/auth.service";
+import { loginSchema, type LoginFormData } from "@/lib/validations/auth.validation";
+import { z } from "zod";
 
 interface LoginFormProps {
   className?: string;
-}
-
-interface LoginFormData {
-  email: string;
-  password: string;
 }
 
 interface FormErrors {
@@ -31,22 +28,22 @@ export function LoginForm({ className }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Walidacja email
-    if (!formData.email) {
-      newErrors.email = "Email jest wymagany";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Nieprawidłowy format email";
+    try {
+      loginSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: FormErrors = {};
+        error.errors.forEach((err) => {
+          if (err.path[0] === "email" || err.path[0] === "password") {
+            newErrors[err.path[0] as keyof FormErrors] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
     }
-
-    // Walidacja hasła
-    if (!formData.password) {
-      newErrors.password = "Hasło jest wymagane";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
