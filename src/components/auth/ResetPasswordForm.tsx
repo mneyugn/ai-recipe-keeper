@@ -87,11 +87,15 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setIsSuccess(true);
-    } catch (error: any) {
-      if (error.message?.includes("invalid_token") || error.message?.includes("expired")) {
-        setGlobalError("Link resetowania hasła wygasł lub jest nieprawidłowy. Wygeneruj nowy link.");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message?.includes("invalid_token") || error.message?.includes("expired")) {
+          setGlobalError("Link resetowania hasła wygasł lub jest nieprawidłowy. Wygeneruj nowy link.");
+        } else {
+          setGlobalError("Wystąpił błąd podczas resetowania hasła. Spróbuj ponownie.");
+        }
       } else {
-        setGlobalError("Wystąpił błąd podczas resetowania hasła. Spróbuj ponownie.");
+        setGlobalError("Wystąpił nieznany błąd. Spróbuj ponownie.");
       }
     } finally {
       setIsLoading(false);

@@ -82,11 +82,15 @@ export function RegisterForm({ className }: RegisterFormProps) {
 
       // Po sukcesie - automatycznie zaloguj i przekieruj do /recipes
       // window.location.href = "/recipes";
-    } catch (error: any) {
-      if (error.message?.includes("User already registered")) {
-        setGlobalError("Użytkownik z tym adresem email już istnieje");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message?.includes("User already registered")) {
+          setGlobalError("Użytkownik z tym adresem email już istnieje");
+        } else {
+          setGlobalError("Wystąpił błąd podczas rejestracji. Spróbuj ponownie.");
+        }
       } else {
-        setGlobalError("Wystąpił błąd podczas rejestracji. Spróbuj ponownie.");
+        setGlobalError("Wystąpił nieznany błąd. Spróbuj ponownie.");
       }
     } finally {
       setIsLoading(false);

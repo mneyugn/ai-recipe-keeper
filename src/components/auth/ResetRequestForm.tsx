@@ -61,11 +61,15 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setIsSuccess(true);
-    } catch (error: any) {
-      if (error.message?.includes("User not found")) {
-        setGlobalError("Nie znaleziono konta z tym adresem email");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.message?.includes("User not found")) {
+          setGlobalError("Nie znaleziono konta z tym adresem email");
+        } else {
+          setGlobalError("Wystąpił błąd podczas wysyłania linku. Spróbuj ponownie.");
+        }
       } else {
-        setGlobalError("Wystąpił błąd podczas wysyłania linku. Spróbuj ponownie.");
+        setGlobalError("Wystąpił nieznany błąd. Spróbuj ponownie.");
       }
     } finally {
       setIsLoading(false);

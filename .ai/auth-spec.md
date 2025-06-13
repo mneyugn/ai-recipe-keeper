@@ -94,20 +94,48 @@ Aktualizujemy `src/middleware/index.ts`:
 
 ```ts
 import { defineMiddleware } from "astro:middleware";
-import { createMiddlewareClient } from "@supabase/auth-helpers-astro";
+import { createSupabaseServerInstance } from "../db/supabase.client.ts";
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  const supabase = createMiddlewareClient(context, {
-    supabaseUrl: import.meta.env.SUPABASE_URL,
-    supabaseKey: import.meta.env.SUPABASE_KEY,
+// Public paths - Auth API endpoints & Server-Rendered Astro Pages
+const PUBLIC_PATHS = [
+  // Server-Rendered Astro Pages
+  "/auth/login",
+  "/auth/register",
+  "/auth/reset",
+  "/auth/reset-password",
+  // Auth API endpoints
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/reset",
+  "/api/auth/reset-confirm",
+  "/api/auth/logout",
+];
+
+export const onRequest = defineMiddleware(async ({ locals, cookies, url, request, redirect }, next) => {
+  // Skip auth check for public paths
+  if (PUBLIC_PATHS.includes(url.pathname)) {
+    return next();
+  }
+
+  const supabase = createSupabaseServerInstance({
+    cookies,
+    headers: request.headers,
   });
 
+  // IMPORTANT: Always get user session first before any other operations
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  context.locals.supabase = supabase;
-  context.locals.session = session;
+  if (user) {
+    locals.user = {
+      email: user.email,
+      id: user.id,
+    };
+  } else if (!PUBLIC_PATHS.includes(url.pathname)) {
+    // Redirect to login for protected routes
+    return redirect("/auth/login");
+  }
 
   return next();
 });

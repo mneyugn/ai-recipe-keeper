@@ -1,12 +1,15 @@
 ---
-// TODO: Po implementacji backendu tutaj będzie:
-// 1. Wywołanie auth.service.logout()
-// 2. Wyczyszczenie sesji/cookie
-// 3. Przekierowanie na /auth/login
+import { createSupabaseServerInstance } from "../db/supabase.client";
 
-// Na razie symulacja wylogowania
-console.log("Logout action triggered");
+// Server-side logout - wyczyść sesję Supabase
+const supabase = createSupabaseServerInstance({
+  cookies: Astro.cookies,
+  headers: Astro.request.headers,
+});
 
-// Przekierowanie do strony logowania
+// Wywołaj logout aby wyczyścić sesję
+await supabase.auth.signOut();
+
+// Przekieruj do strony logowania
 return Astro.redirect("/auth/login");
 ---

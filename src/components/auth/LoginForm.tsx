@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
+import { authService } from "@/lib/services/auth.service";
 
 interface LoginFormProps {
   className?: string;
@@ -59,16 +60,19 @@ export function LoginForm({ className }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      // TODO: Implementacja wywołania auth.service.login
-      console.log("Login attempt:", formData);
+      const result = await authService.login(formData);
 
-      // Symulacja błędu lub sukcesu
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (result.error) {
+        setGlobalError(result.error);
+        return;
+      }
 
-      // Po sukcesie - przekierowanie do /recipes
-      // window.location.href = "/recipes";
-    } catch (error) {
-      setGlobalError("Nieprawidłowe dane logowania");
+      if (result.success) {
+        // Po udanym logowaniu przekieruj do /recipes
+        window.location.href = result.redirectTo || "/recipes";
+      }
+    } catch {
+      setGlobalError("Wystąpił błąd połączenia. Spróbuj ponownie.");
     } finally {
       setIsLoading(false);
     }
