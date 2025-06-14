@@ -1,13 +1,11 @@
-import axios, { type AxiosInstance, type AxiosError } from "axios";
+import axios, { type AxiosInstance, type AxiosError, type AxiosResponse } from "axios";
 import type {
   OpenRouterConfig,
   ChatCompletionRequest,
   ChatCompletionResponse,
   Message,
   ResponseFormat,
-  ModelParameters,
   RetryConfig,
-  OpenRouterError,
 } from "../types";
 
 /**
@@ -83,7 +81,7 @@ export class OpenRouterService {
     const messages = this.formatMessages(sanitizedRequest.systemMessage, sanitizedRequest.userMessage);
 
     // Przygotowanie requestu do API
-    const apiRequest: Record<string, any> = {
+    const apiRequest: Record<string, unknown> = {
       model: sanitizedRequest.modelName || this.defaultModel,
       messages,
       ...sanitizedRequest.modelParameters,
@@ -117,7 +115,7 @@ export class OpenRouterService {
       // W rzeczywistej implementacji sprawdzilibyśmy, czy model jest na liście
       // Na potrzeby implementacji zakładamy, że wszystkie modele są dostępne
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -160,8 +158,8 @@ export class OpenRouterService {
   /**
    * Wykonuje zapytanie HTTP z obsługą retry logic
    */
-  private async makeRequest(endpoint: string, data: any): Promise<any> {
-    let lastError: Error;
+  private async makeRequest(endpoint: string, data: unknown): Promise<AxiosResponse> {
+    let lastError: Error = new Error("Nieoczekiwany błąd połączenia");
 
     for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
       try {
@@ -185,7 +183,7 @@ export class OpenRouterService {
       }
     }
 
-    throw lastError!;
+    throw lastError;
   }
 
   /**
@@ -267,6 +265,7 @@ export class OpenRouterService {
       input
         .trim()
         // Usuwamy potencjalnie niebezpieczne znaki
+        // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
         // Ograniczamy długość do rozumnej wartości
         .slice(0, 50000)
@@ -279,7 +278,7 @@ export class OpenRouterService {
   private handleError(error: AxiosError): never {
     if (error.response) {
       const status = error.response.status;
-      const data = error.response.data as any;
+      const data = error.response.data as { error?: { message?: string } };
 
       switch (status) {
         case 401:

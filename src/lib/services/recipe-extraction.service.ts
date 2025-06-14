@@ -271,7 +271,6 @@ export class RecipeExtractionService {
     }
 
     const obj = data as Record<string, unknown>;
-    console.log("obj", obj);
 
     // Inicjalizacja wyniku z domyślnymi wartościami
     const result: ExtractedRecipeDataDTO = {

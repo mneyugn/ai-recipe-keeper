@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /**
  * Funkcje pomocnicze dla testów E2E
@@ -17,9 +17,9 @@ export async function waitForPageLoad(page: Page): Promise<void> {
  */
 export async function loginUser(page: Page, email: string, password: string): Promise<void> {
   await page.goto("/auth/login");
-  await page.fill('[data-testid="email"]', email);
-  await page.fill('[data-testid="password"]', password);
-  await page.click('[data-testid="login-button"]');
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="password"]', password);
+  await page.click('button[type="submit"]');
   await page.waitForURL("/dashboard");
 }
 
@@ -108,7 +108,7 @@ export async function checkBasicAccessibility(page: Page): Promise<void> {
 /**
  * Mock API endpoint
  */
-export async function mockApiEndpoint(page: Page, url: string | RegExp, response: any): Promise<void> {
+export async function mockApiEndpoint(page: Page, url: string | RegExp, response: unknown): Promise<void> {
   await page.route(url, async (route) => {
     await route.fulfill({
       status: 200,

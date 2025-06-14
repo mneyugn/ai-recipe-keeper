@@ -12,7 +12,7 @@ export default defineConfig({
     ["json", { outputFile: "test-results/results.json" }],
   ],
   use: {
-    baseURL: "http://localhost:4321",
+    baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -20,22 +20,16 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "setup",
-      testMatch: /.*\.setup\.ts/,
-    },
-    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        storageState: "e2e/.auth/user.json",
       },
-      dependencies: ["setup"],
     },
   ],
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:4321",
-    reuseExistingServer: !process.env.CI,
+    url: "http://localhost:3000",
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
   outputDir: "test-results/",
