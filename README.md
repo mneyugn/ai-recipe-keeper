@@ -13,6 +13,7 @@ A modern web application for digitizing, storing, and managing culinary recipes 
     - [Frontend](#frontend)
     - [Backend](#backend)
     - [Development \& Deployment](#development--deployment)
+    - [Testing](#testing)
   - [Getting Started Locally](#getting-started-locally)
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
@@ -63,6 +64,11 @@ AI RecipeKeeper is designed to streamline the process of digitizing and organizi
 - **Node.js 22.14.0**
 - **GitHub Actions**
 - **DigitalOcean**
+
+### Testing
+
+- **Vitest** (Unit Tests)
+- **Playwright** (E2E Tests)
 
 ## Getting Started Locally
 

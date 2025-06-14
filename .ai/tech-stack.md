@@ -18,3 +18,8 @@
 
 - Github Actions
 - DigitalOcean
+
+## Testowanie
+
+- Vitest (testy jednostkowe)
+- Playwright (testy E2E)
