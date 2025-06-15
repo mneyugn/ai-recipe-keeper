@@ -25,7 +25,6 @@ Get current user profile
 {
   "id": "uuid",
   "email": "user@example.com",
-  "username": "johndoe",
   "is_admin": false,
   "created_at": "2024-01-15T10:00:00Z",
   "recipe_count": 42,
@@ -376,7 +375,6 @@ Upload recipe image
 ### User registration validation
 
 - **email:** Required, valid email format, unique
-- **username:** Required, 3-50 characters, alphanumeric + underscore, unique
 - **password:** Required, minimum 8 characters
 
 ### Feedback validation

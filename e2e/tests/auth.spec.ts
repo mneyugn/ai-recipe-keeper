@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage, RegisterPage, ResetRequestPage, ResetPasswordPage } from "../pages";
+import { LoginPage, RegisterPage, ResetRequestPage } from "../pages";
 
 test.describe("Autoryzacja", () => {
   test.describe("Logowanie", () => {
@@ -36,6 +36,23 @@ test.describe("Autoryzacja", () => {
       await loginPage.clickForgotPassword();
 
       await expect(page).toHaveURL(/\/auth\/reset/);
+    });
+
+    test("powinno pomyślnie zalogować użytkownika z prawidłowymi danymi", async ({ page }) => {
+      const loginPage = new LoginPage(page);
+      const email = process.env.E2E_EMAIL;
+      const password = process.env.E2E_PASSWORD;
+
+      if (!email || !password) {
+        throw new Error("Zmienne środowiskowe E2E_EMAIL i E2E_PASSWORD muszą być ustawione");
+      }
+
+      await loginPage.goto();
+      await loginPage.waitForPageLoad();
+
+      await loginPage.login(email, password);
+
+      await expect(page).toHaveURL(/\/recipes/);
     });
   });
 

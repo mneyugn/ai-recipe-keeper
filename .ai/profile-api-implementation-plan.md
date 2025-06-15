@@ -49,11 +49,11 @@ ProfilePage (src/pages/profile.astro)
 ### UserInfoCard (`src/components/profile/UserInfoCard.tsx`)
 
 - **Opis komponentu:** Karta wyświetlająca podstawowe informacje o użytkowniku
-- **Główne elementy:** Card (shadcn/ui), wyświetlanie email, username, liczby przepisów
+- **Główne elementy:** Card (shadcn/ui), wyświetlanie email, liczby przepisów
 - **Obsługiwane zdarzenia:** Brak interakcji użytkownika
 - **Obsługiwana walidacja:** Sprawdzenie obecności danych użytkownika
 - **Typy:** UserInfoCardProps
-- **Propsy:** `{ email: string; username: string; recipeCount: number; createdAt: string }`
+- **Propsy:** `{ email: string; recipeCount: number; createdAt: string }`
 
 ### ExtractionLimitCard (`src/components/profile/ExtractionLimitCard.tsx`)
 
@@ -91,7 +91,6 @@ interface ProfileViewState {
 interface UserProfileViewModel {
   id: string;
   email: string;
-  username: string;
   isAdmin: boolean;
   createdAt: string;
   recipeCount: number;
@@ -119,7 +118,6 @@ interface ExtractionLimitInfo {
 ```typescript
 interface UserInfoCardProps {
   email: string;
-  username: string;
   recipeCount: number;
   memberSince: string;
 }

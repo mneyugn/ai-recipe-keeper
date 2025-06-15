@@ -1,7 +1,7 @@
 <authentication_analysis>
 
 1. Główne przepływy autentykacji:
-   • Logowanie (email/username + hasło) z automatycznym zalogowaniem.
+   • Logowanie (email + hasło) z automatycznym zalogowaniem.
    • Rejestracja nowego użytkownika (tworzy konto i loguje).
    • Reset hasła – inicjacja (email) i potwierdzenie (zmiana hasła).
    • Wylogowanie (unieważnienie sesji).

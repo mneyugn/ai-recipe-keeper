@@ -5,7 +5,7 @@ import type { UserInfoCardProps } from "../../types";
 
 /**
  * UserInfoCard component displaying basic user information
- * Shows email, username, recipe count and member since date
+ * Shows email, recipe count and member since date
  */
 export function UserInfoCard({ email, recipeCount, memberSince }: UserInfoCardProps) {
   return (
@@ -17,12 +17,9 @@ export function UserInfoCard({ email, recipeCount, memberSince }: UserInfoCardPr
         {/* User Avatar and Basic Info */}
         <div className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
-            <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
-              {/* <span className="text-lg font-semibold text-gray-600">{username.charAt(0).toUpperCase()}</span> */}
-            </div>
+            <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center"></div>
           </Avatar>
           <div className="space-y-1">
-            {/* <h3 className="text-lg font-medium text-gray-900">{username}</h3> */}
             <p className="text-sm text-gray-600">{email}</p>
           </div>
         </div>

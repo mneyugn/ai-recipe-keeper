@@ -124,7 +124,6 @@ export function ProfileContainer() {
           {/* User Info Card */}
           <UserInfoCard
             email={profile.email}
-            username={profile.username}
             recipeCount={profile.recipeCount}
             memberSince={profile.memberSinceFormatted}
           />

@@ -7,7 +7,6 @@
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY,
-    username TEXT UNIQUE,
     email TEXT UNIQUE NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,

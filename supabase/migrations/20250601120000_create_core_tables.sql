@@ -9,7 +9,6 @@
 -- create users table (extends supabase auth.users)
 create table users (
     id uuid primary key,
-    username text unique,
     email text unique not null,
     is_admin boolean default false not null,
     created_at timestamptz default now() not null,

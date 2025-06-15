@@ -17,7 +17,7 @@ export class UserService {
       // Pobieranie podstawowych danych użytkownika
       const { data: user, error: userError } = await this.supabase
         .from("users")
-        .select("id, email, username, is_admin, created_at")
+        .select("id, email, is_admin, created_at")
         .eq("id", userId)
         .single();
 

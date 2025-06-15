@@ -6,7 +6,7 @@ import type { Tables } from "./db/database.types";
  * DTO for the user profile returned by GET /api/users/profile
  * Extends data from the users table with additional information (number of recipes, extraction limits)
  */
-export interface UserProfileDTO extends Pick<Tables<"users">, "id" | "email" | "username" | "is_admin" | "created_at"> {
+export interface UserProfileDTO extends Pick<Tables<"users">, "id" | "email" | "is_admin" | "created_at"> {
   recipe_count: number;
   extraction_limit: {
     used: number;
@@ -255,7 +255,6 @@ export interface ProfileViewState {
 export interface UserProfileViewModel {
   id: string;
   email: string;
-  username: string;
   isAdmin: boolean;
   createdAt: string;
   recipeCount: number;
