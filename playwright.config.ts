@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
 export default defineConfig({
   testDir: "./e2e",
@@ -36,7 +39,6 @@ export default defineConfig({
   expect: {
     timeout: 5000,
     toHaveScreenshot: {
-      mode: "ci",
       threshold: 0.2,
     },
   },

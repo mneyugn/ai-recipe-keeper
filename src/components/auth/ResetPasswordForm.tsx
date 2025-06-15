@@ -59,7 +59,7 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Potwierdzenie hasła jest wymagane";
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Hasła nie są zgodne";
+      newErrors.confirmPassword = "Hasła muszą być identyczne";
     }
 
     setErrors(newErrors);
@@ -120,23 +120,23 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
   // Wyświetl błąd tokenu
   if (tokenError) {
     return (
-      <Card className={className}>
+      <Card className={className} data-testid="reset-password-token-error">
         <CardHeader className="text-center">
           <AlertTriangle className="h-16 w-16 text-red-600 mx-auto mb-4" />
           <CardTitle className="text-2xl text-red-700">Link nieprawidłowy</CardTitle>
           <CardDescription>Problem z linkiem resetowania hasła</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert variant="destructive">
+          <Alert variant="destructive" data-testid="reset-password-token-error-alert">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{tokenError}</AlertDescription>
           </Alert>
 
           <div className="mt-6 text-center space-y-2">
-            <Button asChild className="w-full">
+            <Button asChild className="w-full" data-testid="reset-password-generate-new-link">
               <a href="/auth/reset">Wygeneruj nowy link</a>
             </Button>
-            <Button variant="outline" asChild className="w-full">
+            <Button variant="outline" asChild className="w-full" data-testid="reset-password-back-to-login">
               <a href="/auth/login">Powrót do logowania</a>
             </Button>
           </div>
@@ -148,20 +148,20 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
   // Wyświetl komunikat sukcesu
   if (isSuccess) {
     return (
-      <Card className={className}>
+      <Card className={className} data-testid="reset-password-success">
         <CardHeader className="text-center">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <CardTitle className="text-2xl text-green-700">Hasło zmienione!</CardTitle>
           <CardDescription>Twoje hasło zostało pomyślnie zaktualizowane</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert>
+          <Alert data-testid="reset-password-success-alert">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>Możesz teraz zalogować się używając nowego hasła.</AlertDescription>
           </Alert>
 
           <div className="mt-6 text-center">
-            <Button asChild className="w-full">
+            <Button asChild className="w-full" data-testid="reset-password-go-to-login">
               <a href="/auth/login">Przejdź do logowania</a>
             </Button>
           </div>
@@ -171,7 +171,7 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
   }
 
   return (
-    <Card className={className}>
+    <Card className={className} data-testid="reset-password-form">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Ustaw nowe hasło</CardTitle>
         <CardDescription>Wprowadź nowe hasło dla swojego konta</CardDescription>
@@ -179,7 +179,7 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="reset-password-form-element" noValidate>
           <div className="space-y-2">
             <Label htmlFor="newPassword">Nowe hasło</Label>
             <Input
@@ -190,8 +190,13 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
               onChange={handleChange("newPassword")}
               aria-invalid={!!errors.newPassword}
               disabled={isLoading}
+              data-testid="reset-password-new-password-input"
             />
-            {errors.newPassword && <p className="text-sm text-destructive">{errors.newPassword}</p>}
+            {errors.newPassword && (
+              <p className="text-sm text-destructive" data-testid="reset-password-new-password-error">
+                {errors.newPassword}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -204,12 +209,17 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
               onChange={handleChange("confirmPassword")}
               aria-invalid={!!errors.confirmPassword}
               disabled={isLoading}
+              data-testid="reset-password-confirm-password-input"
             />
-            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive" data-testid="reset-password-confirm-password-error">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Zapisywanie..." : "Ustaw nowe hasło"}
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="reset-password-submit-button">
+            {isLoading ? "Resetowanie..." : "Ustaw nowe hasło"}
           </Button>
         </form>
 

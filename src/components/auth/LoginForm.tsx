@@ -91,7 +91,7 @@ export function LoginForm({ className }: LoginFormProps) {
   };
 
   return (
-    <Card className={className}>
+    <Card className={className} data-testid="login-form">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Zaloguj się</CardTitle>
         <CardDescription>Wprowadź swoje dane, aby uzyskać dostęp do konta</CardDescription>
@@ -99,7 +99,7 @@ export function LoginForm({ className }: LoginFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form-element" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -110,8 +110,13 @@ export function LoginForm({ className }: LoginFormProps) {
               onChange={handleChange("email")}
               aria-invalid={!!errors.email}
               disabled={isLoading}
+              data-testid="login-email-input"
             />
-            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-sm text-destructive" data-testid="login-email-error">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -124,17 +129,22 @@ export function LoginForm({ className }: LoginFormProps) {
               onChange={handleChange("password")}
               aria-invalid={!!errors.password}
               disabled={isLoading}
+              data-testid="login-password-input"
             />
-            {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-sm text-destructive" data-testid="login-password-error">
+                {errors.password}
+              </p>
+            )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="login-submit-button">
             {isLoading ? "Logowanie..." : "Zaloguj się"}
           </Button>
         </form>
 
         <div className="mt-4 text-center">
-          <Button variant="link" asChild>
+          <Button variant="link" asChild data-testid="login-forgot-password-link">
             <a href="/auth/reset">Zapomniałeś hasła?</a>
           </Button>
         </div>

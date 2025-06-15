@@ -90,14 +90,14 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
   // Wyświetl komunikat sukcesu
   if (isSuccess) {
     return (
-      <Card className={className}>
+      <Card className={className} data-testid="reset-request-success">
         <CardHeader className="text-center">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <CardTitle className="text-2xl text-green-700">Link wysłany!</CardTitle>
           <CardDescription>Sprawdź swoją skrzynkę odbiorczą</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert>
+          <Alert data-testid="reset-request-success-alert">
             <Mail className="h-4 w-4" />
             <AlertDescription>
               Wysłaliśmy link do resetowania hasła na adres <strong>{formData.email}</strong>. Sprawdź również folder ze
@@ -106,10 +106,15 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
           </Alert>
 
           <div className="mt-6 text-center space-y-2">
-            <Button variant="outline" asChild className="w-full">
+            <Button variant="outline" asChild className="w-full" data-testid="reset-request-back-to-login">
               <a href="/auth/login">Powrót do logowania</a>
             </Button>
-            <Button variant="ghost" onClick={() => setIsSuccess(false)} className="w-full">
+            <Button
+              variant="ghost"
+              onClick={() => setIsSuccess(false)}
+              className="w-full"
+              data-testid="reset-request-send-again"
+            >
               Wyślij link ponownie
             </Button>
           </div>
@@ -119,7 +124,7 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={className} data-testid="reset-request-form">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Resetuj hasło</CardTitle>
         <CardDescription>Wprowadź swój adres email, a wyślemy Ci link do resetowania hasła</CardDescription>
@@ -127,7 +132,7 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="reset-request-form-element" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -138,11 +143,16 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
               onChange={handleChange}
               aria-invalid={!!errors.email}
               disabled={isLoading}
+              data-testid="reset-request-email-input"
             />
-            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-sm text-destructive" data-testid="reset-request-email-error">
+                {errors.email}
+              </p>
+            )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="reset-request-submit-button">
             {isLoading ? "Wysyłanie..." : "Wyślij link do resetowania"}
           </Button>
         </form>
@@ -150,7 +160,7 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Pamiętasz hasło?{" "}
-            <Button variant="link" asChild className="p-0 h-auto">
+            <Button variant="link" asChild className="p-0 h-auto" data-testid="reset-request-login-link">
               <a href="/auth/login">Zaloguj się</a>
             </Button>
           </p>

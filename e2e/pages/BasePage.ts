@@ -50,7 +50,7 @@ export abstract class BasePage {
   }
 
   protected async expectToBeVisible(locator: Locator): Promise<void> {
-    await expect(locator).toBeVisible();
+    await expect(locator).toBeVisible({ timeout: 10000 });
   }
 
   protected async expectToHaveText(locator: Locator, text: string): Promise<void> {

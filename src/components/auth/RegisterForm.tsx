@@ -103,7 +103,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
   };
 
   return (
-    <Card className={className}>
+    <Card className={className} data-testid="register-form">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Załóż konto</CardTitle>
         <CardDescription>Utwórz nowe konto, aby rozpocząć korzystanie z AI RecipeKeeper</CardDescription>
@@ -111,7 +111,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="register-form-element" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -122,8 +122,13 @@ export function RegisterForm({ className }: RegisterFormProps) {
               onChange={handleChange("email")}
               aria-invalid={!!errors.email}
               disabled={isLoading}
+              data-testid="register-email-input"
             />
-            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-sm text-destructive" data-testid="register-email-error">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -136,8 +141,13 @@ export function RegisterForm({ className }: RegisterFormProps) {
               onChange={handleChange("password")}
               aria-invalid={!!errors.password}
               disabled={isLoading}
+              data-testid="register-password-input"
             />
-            {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-sm text-destructive" data-testid="register-password-error">
+                {errors.password}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -150,11 +160,16 @@ export function RegisterForm({ className }: RegisterFormProps) {
               onChange={handleChange("confirmPassword")}
               aria-invalid={!!errors.confirmPassword}
               disabled={isLoading}
+              data-testid="register-confirm-password-input"
             />
-            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive" data-testid="register-confirm-password-error">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading} data-testid="register-submit-button">
             {isLoading ? "Tworzenie konta..." : "Załóż konto"}
           </Button>
         </form>
@@ -162,7 +177,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
         <div className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Masz już konto?{" "}
-            <Button variant="link" asChild className="p-0 h-auto">
+            <Button variant="link" asChild className="p-0 h-auto" data-testid="register-login-link">
               <a href="/auth/login">Zaloguj się</a>
             </Button>
           </p>

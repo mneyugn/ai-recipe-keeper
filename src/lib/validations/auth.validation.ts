@@ -18,7 +18,6 @@ export const registerSchema = z
       .min(1, "Email jest wymagany")
       .email("Nieprawidłowy format email"),
     password: z.string({ required_error: "Hasło jest wymagane" }).min(1, "Hasło jest wymagane"),
-    // .min(8, "Hasło musi mieć co najmniej 8 znaków"),
     confirmPassword: z
       .string({ required_error: "Potwierdzenie hasła jest wymagane" })
       .min(1, "Potwierdzenie hasła jest wymagane"),
