@@ -23,7 +23,7 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Pomyślnie wylogowano",
+        message: "Zostałeś wylogowany",
         redirectTo: "/auth/login",
       }),
       {

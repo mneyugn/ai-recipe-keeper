@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerInstance } from "../../../db/supabase.client";
 import { loginSchema } from "../../../lib/validations/auth.validation";
-import { z } from "zod";
 
 export const prerender = false;
 
@@ -9,20 +8,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const body = await request.json();
 
-    // Walidacja Zod
-    try {
-      loginSchema.parse(body);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessage = error.errors.map((err) => err.message).join(", ");
-        return new Response(JSON.stringify({ error: errorMessage }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
+    const validationResult = loginSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors.map((err) => err.message).join(", ");
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const { email, password } = body;
+    const { email, password } = validationResult.data;
 
     const supabase = createSupabaseServerInstance({
       cookies,

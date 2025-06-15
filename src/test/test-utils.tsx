@@ -1,5 +1,6 @@
-import { ReactElement } from "react";
-import { render, RenderOptions } from "@testing-library/react";
+import type { ReactElement } from "react";
+import type { RenderOptions } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { vi } from "vitest";
 
 /**
@@ -61,6 +62,7 @@ export const mockSessionStorage = () => {
 /**
  * Helper do mockowania fetch API
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mockFetch = (response: any, ok = true) => {
   return vi.fn().mockResolvedValue({
     ok,
@@ -102,6 +104,7 @@ export const waitForAsync = () => {
 /**
  * Helper do tworzenia mock event
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createMockEvent = (type: string, props: any = {}) => {
   return {
     type,

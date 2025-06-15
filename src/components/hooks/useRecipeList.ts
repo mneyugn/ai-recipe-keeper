@@ -53,7 +53,7 @@ const initialState: RecipeListViewModel = {
   },
 };
 
-export const useRecipeList = ({ initialParams, userId }: UseRecipeListParams): UseRecipeListReturn => {
+export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListParams): UseRecipeListReturn => {
   const [state, setState] = useState<RecipeListViewModel>({
     ...initialState,
     filters: {

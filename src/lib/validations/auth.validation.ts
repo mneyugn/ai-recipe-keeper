@@ -2,18 +2,26 @@ import { z } from "zod";
 
 // Login form validation
 export const loginSchema = z.object({
-  email: z.string().min(1, "Email jest wymagany").email("Nieprawidłowy format email"),
-  password: z.string().min(1, "Hasło jest wymagane"),
+  email: z
+    .string({ required_error: "Email jest wymagany" })
+    .min(1, "Email jest wymagany")
+    .email("Nieprawidłowy format email"),
+  password: z.string({ required_error: "Hasło jest wymagane" }).min(1, "Hasło jest wymagane"),
   //   .min(8, "Hasło musi mieć co najmniej 8 znaków"),
 });
 
 // Register form validation
 export const registerSchema = z
   .object({
-    email: z.string().min(1, "Email jest wymagany").email("Nieprawidłowy format email"),
-    password: z.string().min(1, "Hasło jest wymagane"),
+    email: z
+      .string({ required_error: "Email jest wymagany" })
+      .min(1, "Email jest wymagany")
+      .email("Nieprawidłowy format email"),
+    password: z.string({ required_error: "Hasło jest wymagane" }).min(1, "Hasło jest wymagane"),
     // .min(8, "Hasło musi mieć co najmniej 8 znaków"),
-    confirmPassword: z.string().min(1, "Potwierdzenie hasła jest wymagane"),
+    confirmPassword: z
+      .string({ required_error: "Potwierdzenie hasła jest wymagane" })
+      .min(1, "Potwierdzenie hasła jest wymagane"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Hasła muszą być identyczne",
@@ -22,15 +30,23 @@ export const registerSchema = z
 
 // Reset password request validation
 export const resetRequestSchema = z.object({
-  email: z.string().min(1, "Email jest wymagany").email("Nieprawidłowy format email"),
+  email: z
+    .string({ required_error: "Email jest wymagany" })
+    .min(1, "Email jest wymagany")
+    .email("Nieprawidłowy format email"),
 });
 
 // Reset password confirm validation
 export const resetConfirmSchema = z
   .object({
-    token: z.string().min(1, "Token jest wymagany"),
-    newPassword: z.string().min(1, "Nowe hasło jest wymagane").min(8, "Hasło musi mieć co najmniej 8 znaków"),
-    confirmPassword: z.string().min(1, "Potwierdzenie hasła jest wymagane"),
+    token: z.string({ required_error: "Token jest wymagany" }).min(1, "Token jest wymagany"),
+    newPassword: z
+      .string({ required_error: "Nowe hasło jest wymagane" })
+      .min(1, "Nowe hasło jest wymagane")
+      .min(8, "Hasło musi mieć co najmniej 8 znaków"),
+    confirmPassword: z
+      .string({ required_error: "Potwierdzenie hasła jest wymagane" })
+      .min(1, "Potwierdzenie hasła jest wymagane"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Hasła muszą być identyczne",
