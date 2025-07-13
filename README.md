@@ -1,5 +1,5 @@
 # AI RecipeKeeper
-
+ 
 A modern web application for digitizing, storing, and managing culinary recipes using artificial intelligence to automate the process of importing recipes from various sources.
 
 ## Table of Contents
