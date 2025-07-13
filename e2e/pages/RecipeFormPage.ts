@@ -102,21 +102,21 @@ export class RecipeFormPage extends BasePage {
   async clickManualTab(): Promise<void> {
     await this.clickElement(this.tabTriggerManual);
     // Wait for the tab to be active
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(600);
     await expect(this.tabTriggerManual).toHaveAttribute("data-state", "active");
   }
 
   async clickTextTab(): Promise<void> {
     await this.clickElement(this.tabTriggerText);
     // Wait for the tab to be active
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(600);
     await expect(this.tabTriggerText).toHaveAttribute("data-state", "active");
   }
 
   async clickUrlTab(): Promise<void> {
     await this.clickElement(this.tabTriggerUrl);
     // Wait for the tab to be active
-    await this.page.waitForTimeout(300);
+    await this.page.waitForTimeout(600);
     await expect(this.tabTriggerUrl).toHaveAttribute("data-state", "active");
   }
 

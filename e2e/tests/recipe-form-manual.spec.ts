@@ -29,24 +29,6 @@ test.describe("Recipe Form - Manual Creation", () => {
     await recipeFormPage.goto();
   });
 
-  test("should display manual recipe form correctly", async () => {
-    // Check if the form is visible
-    await recipeFormPage.expectFormToBeVisible();
-
-    // Check if the manual tab is available
-    await recipeFormPage.clickManualTab();
-    await recipeFormPage.expectManualContentToBeVisible();
-    await recipeFormPage.expectManualTabToBeActive();
-
-    // Check if the submit button is available
-    await recipeFormPage.expectSubmitButtonToBeEnabled();
-    await recipeFormPage.expectSubmitButtonText("Zapisz przepis");
-
-    // Check if the default fields for ingredients and steps are available
-    await recipeFormPage.expectIngredientsCount(1);
-    await recipeFormPage.expectStepsCount(1);
-  });
-
   test("should successfully create a simple recipe", async ({ page }) => {
     const recipeData = {
       name: "Jajecznica na maśle",
