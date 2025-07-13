@@ -34,6 +34,7 @@ interface MultiSelectTagsProps {
   selectedTagIds: string[];
   setSelectedTagIds: (ids: string[]) => void;
   maxTags?: number;
+  "data-testid"?: string;
 }
 
 const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
@@ -41,6 +42,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
   selectedTagIds,
   setSelectedTagIds,
   maxTags = 10,
+  "data-testid": testId,
 }) => {
   const [open, setOpen] = React.useState(false);
 
@@ -55,7 +57,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
   const selectedTags = availableTags.filter((tag) => selectedTagIds.includes(tag.id));
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-testid={testId}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -64,6 +66,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
             aria-expanded={open}
             className="w-full justify-between"
             onClick={() => setOpen(!open)}
+            data-testid={`${testId}-trigger`}
           >
             <span className="truncate">
               {selectedTags.length > 0
@@ -75,11 +78,11 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
+        <PopoverContent className="w-full p-0" data-testid={`${testId}-popover`}>
           <Command>
-            <CommandInput placeholder="Szukaj tagów..." />
+            <CommandInput placeholder="Szukaj tagów..." data-testid={`${testId}-search`} />
             <CommandEmpty>Nie znaleziono tagów.</CommandEmpty>
-            <CommandGroup className="max-h-64 overflow-auto">
+            <CommandGroup className="max-h-64 overflow-auto" data-testid={`${testId}-options`}>
               {availableTags.map((tag) => (
                 <CommandItem
                   key={tag.id}
@@ -87,6 +90,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
                     toggleTag(tag.id);
                   }}
                   className="flex items-center gap-2"
+                  data-testid={`${testId}-option-${tag.slug}`}
                 >
                   <div
                     className={cn(
@@ -107,13 +111,14 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
       </Popover>
 
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" data-testid={`${testId}-selected-tags`}>
           {selectedTags.map((tag) => (
             <Badge
               key={tag.id}
               variant="secondary"
               className={cn("cursor-pointer transition-colors", getTagColor(tag.id))}
               onClick={() => toggleTag(tag.id)}
+              data-testid={`${testId}-selected-tag-${tag.slug}`}
             >
               {tag.name}
               <span className="ml-1 opacity-70">×</span>
@@ -123,7 +128,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
       )}
 
       {selectedTags.length >= maxTags && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground" data-testid={`${testId}-limit-message`}>
           Osiągnięto limit {maxTags} {maxTags < 5 ? "tagów" : "tagów"}.
         </p>
       )}

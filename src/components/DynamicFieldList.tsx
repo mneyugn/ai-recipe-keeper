@@ -19,6 +19,7 @@ interface DynamicFieldListProps {
   textareaRows?: number;
   fieldLabel?: (index: number) => string; // Optional label for each field e.g. "Step {index + 1}"
   error?: string;
+  "data-testid"?: string;
 }
 
 const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
@@ -34,6 +35,7 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
   textareaRows = 3,
   fieldLabel,
   error,
+  "data-testid": testId,
 }) => {
   const handleAddItem = () => {
     if (items.length < maxItems) {
@@ -58,11 +60,11 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid={testId}>
       <Label className="font-medium">{label}</Label>
-      <div className="space-y-3">
+      <div className="space-y-3" data-testid={`${testId}-items`}>
         {items.map((item, index) => (
-          <div key={index} className="flex gap-2">
+          <div key={index} className="flex gap-2" data-testid={`${testId}-item-${index}`}>
             {fieldLabel && (
               <Label htmlFor={`${label.toLowerCase().replace(/\s+/g, "-")}-${index}`} className="text-sm font-normal">
                 {fieldLabel(index)}
@@ -77,6 +79,7 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
                 placeholder={fieldPlaceholder}
                 maxLength={maxCharsPerItem}
                 className={cn(error && "border-red-500")}
+                data-testid={`${testId}-input-${index}`}
               />
             ) : (
               <Textarea
@@ -87,6 +90,7 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
                 rows={textareaRows}
                 maxLength={maxCharsPerItem}
                 className={cn(error && "border-red-500")}
+                data-testid={`${testId}-textarea-${index}`}
               />
             )}
             {maxCharsPerItem && (
@@ -101,6 +105,7 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
                 size="icon"
                 onClick={() => handleRemoveItem(index)}
                 className="shrink-0"
+                data-testid={`${testId}-remove-${index}`}
               >
                 <XIcon className="h-4 w-4" />
               </Button>
@@ -109,10 +114,20 @@ const DynamicFieldList: React.FC<DynamicFieldListProps> = ({
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-500 mt-1" data-testid={`${testId}-error`}>
+          {error}
+        </p>
+      )}
 
       {items.length < maxItems && (
-        <Button type="button" variant="outline" onClick={handleAddItem} className="mt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAddItem}
+          className="mt-2"
+          data-testid={`${testId}-add-button`}
+        >
           <PlusIcon className="h-4 w-4 mr-2" />
           {addButtonLabel}
         </Button>

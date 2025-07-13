@@ -133,7 +133,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
     // Czyścimy błąd dla pola po jego zmianie
     if (formErrors[name]) {
       setFormErrors((prev) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [name]: removed, ...rest } = prev;
         return rest;
       });
@@ -471,21 +470,28 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
   // TODO: Implement image display (non-editable for MVP)
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="recipe-form">
       {/* Mode selection (Tabs) */}
       <Tabs
         defaultValue="url"
         value={currentMode}
         onValueChange={(value) => setCurrentMode(value as "manual" | "text" | "url")}
+        data-testid="recipe-form-tabs"
       >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="url">Importuj z URL</TabsTrigger>
-          <TabsTrigger value="text">Wklej tekst</TabsTrigger>
-          <TabsTrigger value="manual">Manualne dodawanie</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3" data-testid="recipe-form-tabs-list">
+          <TabsTrigger value="url" data-testid="tab-trigger-url">
+            Importuj z URL
+          </TabsTrigger>
+          <TabsTrigger value="text" data-testid="tab-trigger-text">
+            Wklej tekst
+          </TabsTrigger>
+          <TabsTrigger value="manual" data-testid="tab-trigger-manual">
+            Manualne dodawanie
+          </TabsTrigger>
         </TabsList>
 
         {/* Manual Mode Tab */}
-        <TabsContent value="manual" className="space-y-6 mt-6">
+        <TabsContent value="manual" className="space-y-6 mt-6" data-testid="manual-mode-content">
           <div>
             <Label htmlFor="name">Nazwa potrawy</Label>
             <Input
@@ -493,15 +499,19 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              required
               maxLength={255}
               className={cn("mt-1", formErrors.name && "border-red-500")}
+              data-testid="recipe-name-input"
             />
-            {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-sm text-red-500 mt-1" data-testid="recipe-name-error">
+                {formErrors.name}
+              </p>
+            )}
           </div>
 
           {/* DynamicFieldList for ingredients */}
-          <div>
+          <div data-testid="ingredients-section">
             <DynamicFieldList
               items={formData.ingredients}
               setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, ingredients: newItems }))}
@@ -513,11 +523,12 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
               maxCharsPerItem={200}
               fieldType="input"
               error={formErrors.ingredients}
+              data-testid="ingredients-dynamic-list"
             />
           </div>
 
           {/* DynamicFieldList for steps */}
-          <div>
+          <div data-testid="steps-section">
             <DynamicFieldList
               items={formData.steps}
               setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, steps: newItems }))}
@@ -531,6 +542,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
               textareaRows={3}
               fieldLabel={(index: number) => `Krok ${index + 1}`}
               error={formErrors.steps}
+              data-testid="steps-dynamic-list"
             />
           </div>
 
@@ -543,8 +555,13 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
               onChange={handleInputChange}
               maxLength={100}
               className={cn("mt-1", formErrors.preparation_time && "border-red-500")}
+              data-testid="preparation-time-input"
             />
-            {formErrors.preparation_time && <p className="text-sm text-red-500 mt-1">{formErrors.preparation_time}</p>}
+            {formErrors.preparation_time && (
+              <p className="text-sm text-red-500 mt-1" data-testid="preparation-time-error">
+                {formErrors.preparation_time}
+              </p>
+            )}
           </div>
 
           {/* Source URL and Image URL might be conditionally displayed based on source_type or AI processing */}
@@ -589,20 +606,30 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
               rows={4}
               maxLength={5000}
               className={cn("mt-1", formErrors.notes && "border-red-500")}
+              data-testid="notes-textarea"
             />
-            {formErrors.notes && <p className="text-sm text-red-500 mt-1">{formErrors.notes}</p>}
+            {formErrors.notes && (
+              <p className="text-sm text-red-500 mt-1" data-testid="notes-error">
+                {formErrors.notes}
+              </p>
+            )}
           </div>
 
           {/* MultiSelectTags */}
-          <div>
+          <div data-testid="tags-section">
             <Label>Tagi</Label>
             <MultiSelectTags
               availableTags={availableTags}
               selectedTagIds={formData.tag_ids}
               setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
               maxTags={10}
+              data-testid="tags-multi-select"
             />
-            {formErrors.tag_ids && <p className="text-sm text-red-500 mt-1">{formErrors.tag_ids}</p>}
+            {formErrors.tag_ids && (
+              <p className="text-sm text-red-500 mt-1" data-testid="tags-error">
+                {formErrors.tag_ids}
+              </p>
+            )}
           </div>
         </TabsContent>
 
@@ -714,7 +741,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  required
                   maxLength={255}
                   className={cn("mt-1", formErrors.name && "border-red-500")}
                 />
@@ -852,7 +878,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  required
                   maxLength={255}
                   className={cn("mt-1", formErrors.name && "border-red-500")}
                 />
@@ -961,12 +986,12 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
       </Tabs>
 
       {formErrors.api && (
-        <div data-error="api" className="rounded-md bg-red-50 p-4">
+        <div data-error="api" className="rounded-md bg-red-50 p-4" data-testid="api-error">
           <p className="text-sm text-red-700">{formErrors.api}</p>
         </div>
       )}
 
-      <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+      <Button type="submit" disabled={isLoading} className="w-full sm:w-auto" data-testid="submit-button">
         {isLoading ? "Zapisywanie..." : mode === "edit" ? "Zapisz zmiany" : "Zapisz przepis"}
       </Button>
 

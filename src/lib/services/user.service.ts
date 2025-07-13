@@ -19,13 +19,15 @@ export class UserService {
         .from("users")
         .select("id, email, is_admin, created_at")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (userError) {
+        console.error("Błąd zapytania do bazy danych:", userError);
         throw new Error(`Błąd pobierania danych użytkownika: ${userError.message}`);
       }
 
       if (!user) {
+        console.error("Użytkownik nie istnieje w bazie danych:", userId);
         throw new Error("Użytkownik nie został znaleziony");
       }
 
