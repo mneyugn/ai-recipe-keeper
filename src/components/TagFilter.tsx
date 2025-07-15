@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 import type { TagDTO } from "../types";
+import { ChevronDown, Tag, X } from "lucide-react";
 
 interface TagFilterProps {
   availableTags: TagDTO[];
@@ -58,42 +59,14 @@ const TagFilter: React.FC<TagFilterProps> = ({
               aria-label="Wybierz tagi do filtrowania"
             >
               <span className="flex items-center gap-2">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                >
-                  <path
-                    d="m10.065 1.39985c-0.1663 0-0.3299 0.06588-0.4493 0.18324l-7.28168 7.28174c-0.05575 0.0558-0.10041 0.1219-0.13074 0.1941l-1.39935 3.325c-0.09446 0.2244 0.00779 0.4851 0.23083 0.5892 0.06169 0.0289 0.12705 0.0433 0.19246 0.0433 0.16984 0 0.33464-0.0918 0.41895-0.2486l1.33333-2.2222h2.22222l1.33333 2.2222c0.08431 0.1568 0.24911 0.2486 0.41895 0.2486 0.06541 0 0.13077-0.0144 0.19246-0.0433 0.22304-0.1041 0.32529-0.3648 0.23083-0.5892l-1.39935-3.325c-0.03033-0.0722-0.07499-0.1383-0.13074-0.1941l-7.28168-7.28174c-0.11945-0.11736-0.28295-0.18324-0.44925-0.18324z"
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
+                <Tag className="h-4 w-4" />
                 <span>
                   {selectedTagIds.length === 0
                     ? "Wybierz tagi"
                     : `${selectedTagIds.length} ${selectedTagIds.length === 1 ? "tag" : "tagi"}`}
                 </span>
               </span>
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 15 15"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 opacity-50"
-              >
-                <path
-                  d="m4.93179 5.43179c0.20081-0.20081 0.55785-0.20081 0.75866 0l2.31055 2.31055 2.31055-2.31055c0.20081-0.20081 0.55785-0.20081 0.75866 0 0.20081 0.20081 0.20081 0.55785 0 0.75866l-2.68988 2.68988c-0.20081 0.20081-0.55785 0.20081-0.75866 0l-2.68988-2.68988c-0.20081-0.20081-0.20081-0.55785 0-0.75866z"
-                  fill="currentColor"
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                ></path>
-              </svg>
+              <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </PopoverTrigger>
 
@@ -153,14 +126,7 @@ const TagFilter: React.FC<TagFilterProps> = ({
                 className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
                 aria-label={`Usuń tag ${tag.name}`}
               >
-                <svg width="12" height="12" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="m11.7816 4.03157c0.1462-0.14615 0.1462-0.38308 0-0.52923-0.1461-0.14616-0.3831-0.14616-0.5292 0l-3.25234 3.25234-3.25234-3.25234c-0.14615-0.14616-0.38308-0.14616-0.52923 0-0.14616 0.14615-0.14616 0.38308 0 0.52923l3.25234 3.25237-3.25234 3.2523c-0.14616 0.1462-0.14616 0.3831 0 0.5293 0.14615 0.1461 0.38308 0.1461 0.52923 0l3.25234-3.2523 3.25234 3.2523c0.1461 0.1461 0.3831 0.1461 0.5292 0 0.1462-0.1462 0.1462-0.3831 0-0.5293l-3.2523-3.2523 3.2523-3.25237z"
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
+                <X className="h-3 w-3" />
               </button>
             </Badge>
           ))}
