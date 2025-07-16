@@ -46,7 +46,7 @@ const MobileBottomNav: React.FC<{
     return currentPath.startsWith(href);
   };
 
-  // Enhanced navigation items for mobile
+  // Enhanced navigation items for mobile with better spacing
   const mobileNavItems = [
     ...navigationItems,
     {
@@ -58,61 +58,131 @@ const MobileBottomNav: React.FC<{
     },
   ];
 
+  const handleItemClick = () => {
+    // Add haptic feedback if supported
+    if ("vibrate" in navigator) {
+      navigator.vibrate(50);
+    }
+  };
+
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-50 backdrop-blur-xl bg-surface/95 border-t border-border/20 
-                 shadow-xl safe-area-pb"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="lg:hidden fixed bottom-0 inset-x-0 z-50 mx-3 mb-3 
+                 rounded-3xl backdrop-blur-2xl bg-gradient-to-r from-background/95 via-background/98 to-background/95
+                 border-2 border-border/40 shadow-2xl shadow-black/25
+                 before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-r 
+                 before:from-primary/8 before:via-accent/8 before:to-primary/8 before:blur-xl before:-z-10
+                 ring-1 ring-white/10"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        background: "rgba(255, 255, 255, 0.75)",
+        backdropFilter: "blur(40px) saturate(180%)",
+        WebkitBackdropFilter: "blur(40px) saturate(180%)",
+      }}
     >
-      <div className="grid grid-cols-3 px-4 py-2">
-        {mobileNavItems.map((item) => {
+      {/* Top glow effect */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+      <div className="relative grid grid-cols-3 px-2 py-3">
+        {mobileNavItems.map((item, _index) => {
           const active = isActive(item.href);
+
           return (
             <a
               key={item.id}
               href={item.href}
+              onClick={() => handleItemClick()}
               className={`
-                relative flex flex-col items-center justify-center py-3 px-2 rounded-xl text-xs font-medium
-                transform-gpu transition-all duration-200 active:scale-95
+                relative flex flex-col items-center justify-center py-2 px-3 rounded-xl
+                transform-gpu transition-all duration-300 ease-out group
+                hover:scale-105 active:scale-95
                 ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}
               `}
+              style={{
+                transformOrigin: "center bottom",
+              }}
             >
-              {/* Active indicator */}
-              {active && (
-                <div className="absolute top-0 inset-x-3 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
-              )}
-
-              {/* Icon with enhanced styling */}
+              {/* Icon container with enhanced effects */}
               <div
                 className={`
-                relative mb-1.5 p-2 rounded-lg transition-all duration-200
-                ${active ? "bg-primary/15 text-primary scale-110" : "hover:bg-secondary/50"}
-              `}
-              >
-                {item.icon}
+                  relative mb-2 p-2.5 rounded-xl transition-all duration-300 ease-out shadow-xs bg-primary/10
+                  ${
+                    active
+                      ? "bg-primary/15 text-primary scale-110 shadow-lg shadow-primary/20"
+                      : "group-hover:bg-secondary/50 group-hover:scale-105"
+                  }
 
-                {/* Badge for recipe count */}
+                `}
+              >
+                {/* Icon glow effect for active state */}
+                {active && <div className="absolute inset-0 bg-primary/20 rounded-xl blur-md" />}
+
+                <div className="relative z-10">{item.icon}</div>
+
+                {/* Badge with enhanced styling */}
                 {item?.badge && item?.badge > 0 && (
                   <div
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground 
-                                 rounded-full flex items-center justify-center text-xs font-semibold"
+                    className={`
+                      absolute -top-1 -right-1 min-w-[20px] h-5 px-1
+                      bg-gradient-to-r from-red-500 to-red-600 text-white
+                      rounded-full flex items-center justify-center text-xs font-bold
+                      shadow-lg shadow-red-500/30 border border-white/20
+                      transform transition-all duration-200
+                      ${active ? "scale-110" : "group-hover:scale-105"}
+                    `}
                   >
                     {item.badge > 99 ? "99+" : item.badge}
                   </div>
                 )}
+
+                {/* Ripple effect */}
+                <div className="absolute inset-0 rounded-xl overflow-hidden">
+                  <div
+                    className={`
+                    absolute inset-0 bg-primary/10 rounded-xl transform scale-0 
+                    group-active:scale-100 transition-transform duration-200 ease-out
+                  `}
+                  />
+                </div>
               </div>
 
-              {/* Label */}
-              <span className={`transition-colors duration-200 text-center ${active ? "font-semibold" : ""}`}>
+              {/* Label with better typography */}
+              <span
+                className={`
+                  text-xs font-medium text-center leading-tight transition-all duration-300
+                  ${
+                    active
+                      ? "font-semibold text-primary scale-105"
+                      : "group-hover:text-foreground group-hover:scale-105"
+                  }
+                `}
+              >
                 {item.label}
               </span>
 
-              {/* Active background glow */}
-              {active && <div className="absolute inset-0 bg-primary/5 rounded-xl -z-10" />}
+              {/* Active state bottom indicator */}
+              {active && (
+                <div className="absolute bottom-1 inset-x-4 h-1 bg-gradient-to-r from-primary via-accent to-primary rounded-full shadow-sm" />
+              )}
+
+              {/* Hover effect overlay */}
+              <div
+                className={`
+                absolute inset-0 rounded-xl transition-opacity duration-200
+                ${
+                  active
+                    ? "bg-gradient-to-t from-primary/5 to-transparent opacity-100"
+                    : "bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100"
+                }
+              `}
+              />
             </a>
           );
         })}
       </div>
+
+      {/* Bottom reflection effect */}
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </nav>
   );
 };

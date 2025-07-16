@@ -105,9 +105,9 @@ const RecipeFormFields = ({
         <CardDescription>Podaj nazwę, czas przygotowania i otaguj swój przepis.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className={cn("grid gap-6", formData.image_url && "lg:grid-cols-2")}>
+        <div className={cn("grid gap-6", formData.image_url && "lg:grid-cols-3")}>
           {/* Form fields section */}
-          <div className="space-y-4">
+          <div className={cn("space-y-4", formData.image_url && "lg:col-span-2")}>
             <div>
               <Label>Nazwa potrawy</Label>
               <Input
@@ -157,8 +157,8 @@ const RecipeFormFields = ({
           {formData.image_url && (
             <div className="lg:order-last">
               <Label className="block mb-2">Obrazek przepisu</Label>
-              <div className="border rounded-xl overflow-hidden bg-muted/20">
-                <img src={formData.image_url} alt="Podgląd obrazka przepisu" className="w-full h-auto object-cover" />
+              <div className="border rounded-xl overflow-hidden bg-muted/20 max-w-xs">
+                <img src={formData.image_url} alt="Podgląd obrazka przepisu" className="w-full h-48 object-cover" />
               </div>
             </div>
           )}

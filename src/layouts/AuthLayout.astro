@@ -8,7 +8,7 @@ export interface Props {
   showLoginLink?: boolean;
 }
 
-const { title = "AI RecipeKeeper", showRegisterLink = false, showLoginLink = false } = Astro.props;
+const { title = "AI RecipeKeeper" } = Astro.props;
 ---
 
 <Layout title={title}>
@@ -34,30 +34,6 @@ const { title = "AI RecipeKeeper", showRegisterLink = false, showLoginLink = fal
               <p class="text-xs text-muted-foreground font-medium mt-0.5">Twoja kulinarna baza wiedzy</p>
             </div>
           </a>
-
-          <!-- Navigation Links -->
-          <div class="text-sm">
-            {
-              showRegisterLink && (
-                <span class="text-muted-foreground">
-                  Nie masz konta?{" "}
-                  <a href="/auth/register" class="text-primary hover:underline font-medium">
-                    Zarejestruj się
-                  </a>
-                </span>
-              )
-            }
-            {
-              showLoginLink && (
-                <span class="text-muted-foreground">
-                  Masz konto?{" "}
-                  <a href="/auth/login" class="text-primary hover:underline font-medium">
-                    Zaloguj się
-                  </a>
-                </span>
-              )
-            }
-          </div>
         </div>
       </div>
     </header>

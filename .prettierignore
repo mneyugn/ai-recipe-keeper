@@ -1,0 +1,8 @@
+# Exclude CSS files from Prettier formatting to preserve Tailwind CSS syntax
+src/styles/global.css
+
+# Other common exclusions
+dist/
+build/
+node_modules/
+.astro/ 
