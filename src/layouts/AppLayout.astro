@@ -12,7 +12,7 @@ const { title } = Astro.props;
 <Layout title={title}>
   <div class="min-h-screen bg-background">
     <!-- Sidebar Integration -->
-    <SidebarRenderer client:load />
+    <SidebarRenderer client:load transition:persist />
 
     <!-- Main Content -->
     <main class="lg:ml-80 min-h-screen pb-16 lg:pb-0 pt-0 lg:pt-0">

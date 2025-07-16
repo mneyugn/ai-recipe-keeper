@@ -4,37 +4,19 @@ import { Badge } from "@/components/ui/badge";
 
 interface RecipeCardProps {
   recipe: RecipeListItemDTO;
-  onClick: (recipeId: string) => void;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
-  const handleClick = () => {
-    // Walidacja ID przepisu
-    if (!recipe.id || typeof recipe.id !== "string") {
-      console.error("Invalid recipe ID:", recipe.id);
-      return;
-    }
-    onClick(recipe.id);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleClick();
-    }
-  };
+const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+  const recipeUrl = `/recipes/${recipe.id}`;
 
   return (
-    <div
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
+    <a
+      href={recipeUrl}
       aria-label={`Otwórz przepis: ${recipe.name}`}
       className="group bg-card/95 backdrop-blur-sm text-card-foreground rounded-xl shadow-md hover:shadow-2xl 
                  border-0 overflow-hidden cursor-pointer transform-gpu transition-all duration-300 
                  hover:-translate-y-1 hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-ring 
-                 focus-visible:outline-none active:scale-[0.98]"
+                 focus-visible:outline-none active:scale-[0.98] block"
     >
       {/* Hero Image z gradient overlay */}
       <div className="relative h-52 bg-muted overflow-hidden">
@@ -187,7 +169,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
         className="h-1 bg-gradient-to-r from-primary via-accent to-primary 
                       transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"
       />
-    </div>
+    </a>
   );
 };
 

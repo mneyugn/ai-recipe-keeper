@@ -50,10 +50,6 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
     isLoading: state.isLoadingMore,
   });
 
-  const handleRecipeClick = (recipeId: string) => {
-    actions.navigateToRecipe(recipeId);
-  };
-
   // Enhanced error state z animations
   if (state.error) {
     return (
@@ -145,7 +141,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
 
           return (
             <div key={recipe.id} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-              <RecipeCard recipe={recipe} onClick={handleRecipeClick} />
+              <RecipeCard recipe={recipe} />
             </div>
           );
         })}

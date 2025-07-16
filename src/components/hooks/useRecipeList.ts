@@ -30,7 +30,6 @@ interface UseRecipeListReturn {
     changeSort: (sort: RecipeSortOption) => void;
     changeTagFilter: (tagIds: string[]) => void;
     refresh: () => Promise<void>;
-    navigateToRecipe: (id: string) => void;
   };
 }
 
@@ -222,16 +221,6 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
     await loadRecipes(currentParams);
   }, [initialParams, state.filters, loadRecipes]);
 
-  // Nawigacja do przepisu
-  const navigateToRecipe = useCallback((id: string) => {
-    // Walidacja ID
-    if (!id || typeof id !== "string") {
-      console.error("Invalid recipe ID:", id);
-      return;
-    }
-    window.location.href = `/recipes/${id}`;
-  }, []);
-
   // Ładowanie początkowe
   useEffect(() => {
     loadRecipes(initialParams);
@@ -244,7 +233,6 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
       changeSort,
       changeTagFilter,
       refresh,
-      navigateToRecipe,
     },
   };
 };
