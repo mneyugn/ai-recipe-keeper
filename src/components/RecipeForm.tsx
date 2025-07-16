@@ -499,7 +499,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
         onValueChange={(value) => setCurrentMode(value as "manual" | "text" | "url")}
         data-testid="recipe-form-tabs"
       >
-        <TabsList className="grid w-[600px] mx-auto grid-cols-3" data-testid="recipe-form-tabs-list">
+        <TabsList className="grid w-full max-w-[600px] mx-auto grid-cols-3" data-testid="recipe-form-tabs-list">
           <TabsTrigger value="url" className="font-medium" data-testid="tab-trigger-url">
             Importuj z URL
           </TabsTrigger>

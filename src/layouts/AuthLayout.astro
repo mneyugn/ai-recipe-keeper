@@ -1,5 +1,6 @@
 ---
 import Layout from "./Layout.astro";
+import { ChefHat } from "lucide-react";
 
 export interface Props {
   title?: string;
@@ -17,7 +18,22 @@ const { title = "AI RecipeKeeper", showRegisterLink = false, showLoginLink = fal
       <div class="container mx-auto max-w-md">
         <div class="flex items-center justify-between">
           <!-- Logo -->
-          <a href="/" class="text-2xl font-bold text-primary"> 🍽️ AI RecipeKeeper </a>
+          <a href="/" class="flex items-center space-x-3 group hover:opacity-80 transition-opacity">
+            <div class="relative">
+              <div
+                class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform"
+              >
+                <ChefHat className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div class="absolute inset-0 w-10 h-10 bg-primary/20 rounded-xl blur-md -z-10"></div>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                RecipeKeeper
+              </h1>
+              <p class="text-xs text-muted-foreground font-medium mt-0.5">Twoja kulinarna baza wiedzy</p>
+            </div>
+          </a>
 
           <!-- Navigation Links -->
           <div class="text-sm">

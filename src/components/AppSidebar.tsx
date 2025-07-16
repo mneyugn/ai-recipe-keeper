@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BookOpen, Plus, User, LogOut, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { MobileHeader } from "./MobileHeader";
 
 interface User {
   email: string;
@@ -117,12 +119,20 @@ const MobileBottomNav: React.FC<{
 
 export function AppSidebar({ user, currentPath, onLogout, className = "" }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isTabletMenuOpen, setIsTabletMenuOpen] = useState(false);
+  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">("desktop");
 
-  // Sprawdzanie rozmiaru ekranu
+  // Enhanced screen size detection
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024);
+      const width = window.innerWidth;
+      if (width < 768) {
+        setScreenSize("mobile");
+      } else if (width < 1024) {
+        setScreenSize("tablet");
+      } else {
+        setScreenSize("desktop");
+      }
     };
 
     checkScreenSize();
@@ -130,14 +140,15 @@ export function AppSidebar({ user, currentPath, onLogout, className = "" }: Side
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Zamykanie mobile sidebara przy zmianie ścieżki
+  // Close menus on path change
   useEffect(() => {
     setIsMobileOpen(false);
+    setIsTabletMenuOpen(false);
   }, [currentPath]);
 
-  // Blokowanie przewijania gdy mobile sidebar jest otwarty
+  // Handle body overflow for mobile menu
   useEffect(() => {
-    if (isMobile && isMobileOpen) {
+    if (screenSize === "mobile" && isMobileOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -146,7 +157,7 @@ export function AppSidebar({ user, currentPath, onLogout, className = "" }: Side
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMobile, isMobileOpen]);
+  }, [screenSize, isMobileOpen]);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -323,16 +334,31 @@ export function AppSidebar({ user, currentPath, onLogout, className = "" }: Side
     </div>
   );
 
-  if (isMobile) {
+  // Mobile (< 768px): Bottom navigation + Mobile header
+  if (screenSize === "mobile") {
     return (
       <>
-        {/* Enhanced Mobile Bottom Navigation - bez hamburger menu */}
+        <MobileHeader />
         <MobileBottomNav navigationItems={navigationItems} currentPath={currentPath} />
       </>
     );
   }
 
-  // Enhanced Desktop Sidebar
+  // Tablet (768px - 1023px): Hamburger menu + Mobile header
+  if (screenSize === "tablet") {
+    return (
+      <>
+        <MobileHeader showHamburger={true} onHamburgerClick={() => setIsTabletMenuOpen(true)} />
+        <Sheet open={isTabletMenuOpen} onOpenChange={setIsTabletMenuOpen}>
+          <SheetContent side="left" className="w-80 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop (>= 1024px): Fixed sidebar (current behavior)
   return (
     <div className={`fixed left-0 top-0 h-full w-80 z-40 ${className}`}>
       <SidebarContent />

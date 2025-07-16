@@ -178,17 +178,8 @@ export class UrlScraperService {
     const titleMatch = cleanHtml.match(/<title[^>]*>(.*?)<\/title>/i);
     const title = titleMatch ? titleMatch[1].trim() : undefined;
 
-    // Próba wyodrębnienia głównego obrazka (meta property="og:image" lub podobne)
-    const imageMatch = cleanHtml.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i);
-    let imageUrl = imageMatch ? imageMatch[1] : undefined;
-
-    // Jeśli nie ma og:image, spróbuj znaleźć inne obrazki związane z przepisem
-    if (!imageUrl) {
-      const imgMatch =
-        cleanHtml.match(/<img[^>]*src="([^"]*)"[^>]*alt="[^"]*przepis[^"]*"/i) ||
-        cleanHtml.match(/<img[^>]*alt="[^"]*przepis[^"]*"[^>]*src="([^"]*)"/i);
-      imageUrl = imgMatch ? imgMatch[1] : undefined;
-    }
+    // Enhanced image extraction with priority for higher resolution
+    let imageUrl = this.extractHighResolutionImage(cleanHtml, url);
 
     // Konwersja względnych URL na bezwzględne
     if (imageUrl && !imageUrl.startsWith("http")) {
@@ -211,6 +202,202 @@ export class UrlScraperService {
       imageUrl,
       title,
     };
+  }
+
+  /**
+   * Enhanced image extraction that prioritizes higher resolution images
+   */
+  private extractHighResolutionImage(html: string, _url: string): string | undefined {
+    // Priority 1: High-resolution meta tags
+    const highResMetaTags = [
+      /<meta[^>]*property="og:image:secure_url"[^>]*content="([^"]*)"[^>]*>/i,
+      /<meta[^>]*property="og:image:url"[^>]*content="([^"]*)"[^>]*>/i,
+      /<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i,
+      /<meta[^>]*name="twitter:image"[^>]*content="([^"]*)"[^>]*>/i,
+      /<meta[^>]*name="twitter:image:src"[^>]*content="([^"]*)"[^>]*>/i,
+    ];
+
+    for (const pattern of highResMetaTags) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        const imageUrl = match[1];
+        // Check if it looks like a high-resolution image
+        if (this.isHighResolutionImageUrl(imageUrl)) {
+          return imageUrl;
+        }
+      }
+    }
+
+    // Priority 2: JSON-LD structured data
+    const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
+    if (jsonLdMatch) {
+      for (const jsonLdScript of jsonLdMatch) {
+        try {
+          const jsonContent = jsonLdScript.replace(/<script[^>]*type="application\/ld\+json"[^>]*>|<\/script>/gi, "");
+          const data = JSON.parse(jsonContent);
+          const imageUrl = this.extractImageFromJsonLd(data);
+          if (imageUrl && this.isHighResolutionImageUrl(imageUrl)) {
+            return imageUrl;
+          }
+        } catch {
+          // Ignore malformed JSON-LD
+        }
+      }
+    }
+
+    // Priority 3: High-resolution image attributes (srcset, data-src, etc.)
+    const highResImagePatterns = [
+      // Srcset with high DPI
+      /<img[^>]*srcset="([^"]*)"[^>]*>/gi,
+      // Data attributes often contain full-size images
+      /<img[^>]*data-src="([^"]*)"[^>]*>/gi,
+      /<img[^>]*data-original="([^"]*)"[^>]*>/gi,
+      /<img[^>]*data-lazy="([^"]*)"[^>]*>/gi,
+      /<img[^>]*data-full="([^"]*)"[^>]*>/gi,
+    ];
+
+    for (const pattern of highResImagePatterns) {
+      let match;
+      while ((match = pattern.exec(html)) !== null) {
+        if (match[1]) {
+          // For srcset, take the highest resolution option
+          if (pattern.source.includes("srcset")) {
+            const srcsetUrl = this.getBestImageFromSrcset(match[1]);
+            if (srcsetUrl && this.isRecipeRelatedImage(match[0])) {
+              return srcsetUrl;
+            }
+          } else {
+            // For data attributes, check if it's recipe-related
+            if (this.isRecipeRelatedImage(match[0]) && this.isHighResolutionImageUrl(match[1])) {
+              return match[1];
+            }
+          }
+        }
+      }
+    }
+
+    // Priority 4: Regular img tags with recipe-related context
+    const recipeImagePatterns = [
+      /<img[^>]*src="([^"]*)"[^>]*alt="[^"]*przepis[^"]*"/gi,
+      /<img[^>]*alt="[^"]*przepis[^"]*"[^>]*src="([^"]*)"/gi,
+      /<img[^>]*src="([^"]*)"[^>]*class="[^"]*recipe[^"]*"/gi,
+      /<img[^>]*class="[^"]*recipe[^"]*"[^>]*src="([^"]*)"/gi,
+    ];
+
+    for (const pattern of recipeImagePatterns) {
+      let match;
+      while ((match = pattern.exec(html)) !== null) {
+        if (match[1] && this.isHighResolutionImageUrl(match[1])) {
+          return match[1];
+        }
+      }
+    }
+
+    // Fallback: First meta og:image (original behavior)
+    const fallbackMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i);
+    return fallbackMatch ? fallbackMatch[1] : undefined;
+  }
+
+  /**
+   * Extracts image URL from JSON-LD structured data
+   */
+  private extractImageFromJsonLd(data: unknown): string | undefined {
+    if (!data || typeof data !== "object") return undefined;
+
+    const recipeData = data as Record<string, unknown>;
+
+    // Handle arrays of objects
+    if (Array.isArray(recipeData)) {
+      for (const item of recipeData) {
+        const imageUrl = this.extractImageFromJsonLd(item);
+        if (imageUrl) return imageUrl;
+      }
+      return undefined;
+    }
+
+    // Look for image property
+    if ("image" in recipeData) {
+      if (typeof recipeData.image === "string") {
+        return recipeData.image;
+      }
+      if (Array.isArray(recipeData.image)) {
+        return typeof recipeData.image[0] === "string" ? recipeData.image[0] : undefined;
+      }
+      if (typeof recipeData.image === "object" && recipeData.image && "url" in recipeData.image) {
+        return typeof recipeData.image.url === "string" ? recipeData.image.url : undefined;
+      }
+    }
+
+    // Recipe-specific schemas
+    if ("@type" in recipeData && recipeData["@type"] === "Recipe" && "image" in recipeData) {
+      return this.extractImageFromJsonLd(recipeData.image);
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Checks if the URL likely points to a high-resolution image
+   */
+  private isHighResolutionImageUrl(url: string): boolean {
+    if (!url) return false;
+
+    // Check for high-resolution indicators in URL
+    const highResIndicators = [
+      /large|big|full|original|hd|high|xl|xxl/i,
+      /\d{3,4}x\d{3,4}/, // Resolution like 800x600
+      /\d{3,4}w/, // Width like 800w
+      /_\d{3,4}\./, // Underscore with number like _800.
+    ];
+
+    const hasHighResIndicator = highResIndicators.some((pattern) => pattern.test(url));
+
+    // Avoid thumbnail indicators
+    const thumbnailIndicators = [
+      /thumb|small|tiny|mini|preview|icon/i,
+      /_\d{1,2}x\d{1,2}/, // Small dimensions like _32x32
+      /_[st]\./, // _s. or _t. for small/thumbnail
+    ];
+
+    const hasThumbnailIndicator = thumbnailIndicators.some((pattern) => pattern.test(url));
+
+    return hasHighResIndicator && !hasThumbnailIndicator;
+  }
+
+  /**
+   * Checks if an img tag is likely related to the recipe
+   */
+  private isRecipeRelatedImage(imgTag: string): boolean {
+    const recipeKeywords = ["recipe", "przepis", "dish", "food", "meal", "potrawa", "jedzenie"];
+
+    return recipeKeywords.some((keyword) => imgTag.toLowerCase().includes(keyword.toLowerCase()));
+  }
+
+  /**
+   * Extracts the best (highest resolution) image from srcset attribute
+   */
+  private getBestImageFromSrcset(srcset: string): string | undefined {
+    const sources = srcset.split(",").map((src) => {
+      const parts = src.trim().split(/\s+/);
+      const url = parts[0];
+      const descriptor = parts[1]; // 2x, 300w, etc.
+
+      let width = 0;
+      if (descriptor) {
+        if (descriptor.endsWith("w")) {
+          width = parseInt(descriptor.slice(0, -1));
+        } else if (descriptor.endsWith("x")) {
+          // Assume 2x means 800px base width
+          width = parseInt(descriptor.slice(0, -1)) * 400;
+        }
+      }
+
+      return { url, width };
+    });
+
+    // Sort by width and return the highest resolution
+    sources.sort((a, b) => b.width - a.width);
+    return sources[0]?.url;
   }
 
   /**
