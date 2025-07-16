@@ -62,62 +62,6 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
     },
   });
 
-  // Funkcja ładowania przepisów
-  const loadRecipes = useCallback(async (params: RecipeListQueryParams, append = false) => {
-    try {
-      setState((prev) => ({
-        ...prev,
-        isLoading: !append,
-        isLoadingMore: append,
-        error: null,
-      }));
-
-      const searchParams = new URLSearchParams();
-      if (params.page) searchParams.set("page", params.page.toString());
-      if (params.limit) searchParams.set("limit", params.limit.toString());
-      if (params.sort) searchParams.set("sort", params.sort);
-      if (params.tag) searchParams.set("tags", params.tag);
-
-      const response = await fetch(`/api/recipes?${searchParams}`);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Sesja wygasła. Zaloguj się ponownie.");
-        }
-        if (response.status === 403) {
-          throw new Error("Brak uprawnień do przeglądania przepisów.");
-        }
-        if (response.status >= 500) {
-          throw new Error("Błąd serwera. Spróbuj ponownie później.");
-        }
-        throw new Error("Nie udało się pobrać przepisów");
-      }
-
-      const data = await response.json();
-
-      setState((prev) => ({
-        ...prev,
-        recipes: append ? [...prev.recipes, ...data.recipes] : data.recipes,
-        pagination: data.pagination,
-        hasNextPage: data.pagination.page < data.pagination.total_pages,
-        isLoading: false,
-        isLoadingMore: false,
-      }));
-
-      // Aktualizacja URL dla SEO i nawigacji
-      if (!append) {
-        updateURL(params);
-      }
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : "Wystąpił błąd",
-        isLoading: false,
-        isLoadingMore: false,
-      }));
-    }
-  }, []);
-
   // Aktualizacja URL
   const updateURL = useCallback((params: RecipeListQueryParams) => {
     const url = new URL(window.location.href);
@@ -145,6 +89,65 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
     // Aktualizacja URL bez przeładowania strony
     window.history.pushState({}, "", url.toString());
   }, []);
+
+  // Funkcja ładowania przepisów
+  const loadRecipes = useCallback(
+    async (params: RecipeListQueryParams, append = false) => {
+      try {
+        setState((prev) => ({
+          ...prev,
+          isLoading: !append,
+          isLoadingMore: append,
+          error: null,
+        }));
+
+        const searchParams = new URLSearchParams();
+        if (params.page) searchParams.set("page", params.page.toString());
+        if (params.limit) searchParams.set("limit", params.limit.toString());
+        if (params.sort) searchParams.set("sort", params.sort);
+        if (params.tag) searchParams.set("tags", params.tag);
+
+        const response = await fetch(`/api/recipes?${searchParams}`);
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error("Sesja wygasła. Zaloguj się ponownie.");
+          }
+          if (response.status === 403) {
+            throw new Error("Brak uprawnień do przeglądania przepisów.");
+          }
+          if (response.status >= 500) {
+            throw new Error("Błąd serwera. Spróbuj ponownie później.");
+          }
+          throw new Error("Nie udało się pobrać przepisów");
+        }
+
+        const data = await response.json();
+
+        setState((prev) => ({
+          ...prev,
+          recipes: append ? [...prev.recipes, ...data.recipes] : data.recipes,
+          pagination: data.pagination,
+          hasNextPage: data.pagination.page < data.pagination.total_pages,
+          isLoading: false,
+          isLoadingMore: false,
+        }));
+
+        // Aktualizacja URL dla SEO i nawigacji
+        if (!append) {
+          updateURL(params);
+        }
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          error: error instanceof Error ? error.message : "Wystąpił błąd",
+          isLoading: false,
+          isLoadingMore: false,
+        }));
+      }
+    },
+    [updateURL]
+  );
 
   // Ładowanie kolejnej strony (infinite scroll)
   const loadMore = useCallback(async () => {
@@ -232,7 +235,7 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
   // Ładowanie początkowe
   useEffect(() => {
     loadRecipes(initialParams);
-  }, []); // Zależności puste - ładujemy tylko raz na początku
+  }, [loadRecipes, initialParams]);
 
   return {
     state,

@@ -10,15 +10,15 @@ interface ResetPasswordFormProps {
   token: string;
 }
 
-type ResetPasswordFormData = {
+interface ResetPasswordFormData {
   newPassword: string;
   confirmPassword: string;
-};
+}
 
-type FormErrors = {
+interface FormErrors {
   newPassword?: string;
   confirmPassword?: string;
-};
+}
 
 export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) {
   const [formData, setFormData] = useState<ResetPasswordFormData>({
@@ -75,7 +75,7 @@ export function ResetPasswordForm({ className, token }: ResetPasswordFormProps) 
 
     try {
       // TODO: Implementacja wywołania auth.service.resetPassword
-      console.log("Password reset attempt:", { token, newPassword: formData.newPassword });
+      // console.log("Password reset attempt:", { token, newPassword: formData.newPassword });
 
       // Symulacja błędu lub sukcesu
       await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -127,6 +127,7 @@ describe("POST /api/auth/register", () => {
     expect(result).toEqual({
       success: true,
       message: "Sprawdź swoją skrzynkę email i potwierdź adres, aby dokończyć rejestrację",
+      redirectTo: "/auth/login",
       user: {
         id: "user-123",
         email: "test@example.com",

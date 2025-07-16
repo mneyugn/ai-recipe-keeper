@@ -20,13 +20,13 @@ async function cleanupDatabase() {
     throw error;
   }
 
-  console.log("Baza danych została wyczyszczona pomyślnie");
+  //   console.log("Baza danych została wyczyszczona pomyślnie");
 }
 
 async function globalTeardown() {
-  console.log("Rozpoczynam czyszczenie bazy danych...");
+  //  console.log("Rozpoczynam czyszczenie bazy danych...");
   await cleanupDatabase();
-  console.log("Zakończono czyszczenie bazy danych");
+  //   console.log("Zakończono czyszczenie bazy danych");
 }
 
 export default globalTeardown;

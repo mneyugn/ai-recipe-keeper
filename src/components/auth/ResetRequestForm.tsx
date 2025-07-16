@@ -9,13 +9,13 @@ interface ResetRequestFormProps {
   className?: string;
 }
 
-type ResetRequestFormData = {
+interface ResetRequestFormData {
   email: string;
-};
+}
 
-type FormErrors = {
+interface FormErrors {
   email?: string;
-};
+}
 
 export function ResetRequestForm({ className }: ResetRequestFormProps) {
   const [formData, setFormData] = useState<ResetRequestFormData>({
@@ -52,7 +52,7 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
 
     try {
       // TODO: Implementacja wywołania auth.service.requestReset
-      console.log("Reset request attempt:", formData);
+      //   console.log("Reset request attempt:", formData);
 
       // Symulacja błędu lub sukcesu
       await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -85,14 +85,14 @@ export const POST: APIRoute = async ({ request, params }) => {
       );
     }
 
-    const { feedback } = validationResult.data;
+    // const { _feedback } = validationResult.data;
 
     // TODO: Here you would typically:
     // 1. Verify that the extraction log exists
     // 2. Store the feedback in the database
     // 3. Optionally use the feedback to improve AI model
 
-    console.log(`Received feedback for extraction ${logId}: ${feedback}`);
+    //   console.log(`Received feedback for extraction ${logId}: ${feedback}`);
 
     // For now, just return success
     return new Response(null, {
