@@ -105,52 +105,63 @@ const RecipeFormFields = ({
         <CardDescription>Podaj nazwę, czas przygotowania i otaguj swój przepis.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Obrazek przepisu - przeniesiony wyżej */}
-        {formData.image_url && (
-          <div className="text-center">
-            <Label>Obrazek przepisu</Label>
-            <div className="mt-2 border rounded-xl overflow-hidden bg-muted/20">
-              <img src={formData.image_url} alt="Podgląd obrazka przepisu" className="w-full max-h-64 object-cover" />
+        <div className={cn("grid gap-6", formData.image_url && "lg:grid-cols-2")}>
+          {/* Form fields section */}
+          <div className="space-y-4">
+            <div>
+              <Label>Nazwa potrawy</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Nazwa potrawy"
+                value={formData.name}
+                onChange={handleInputChange}
+                maxLength={255}
+                className={cn("mt-1", formErrors.name && "border-destructive")}
+                data-testid="recipe-name-input"
+              />
+              {formErrors.name && (
+                <p className="text-sm text-destructive mt-1" data-testid="recipe-name-error">
+                  {formErrors.name}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>Czas przygotowania</Label>
+              <Input
+                id="preparation_time"
+                name="preparation_time"
+                placeholder="Czas przygotowania"
+                value={formData.preparation_time || ""}
+                onChange={handleInputChange}
+                className={cn("mt-1", formErrors.preparation_time && "border-destructive")}
+                data-testid="preparation-time-input"
+              />
+            </div>
+
+            <div>
+              <Label className="block mb-2">Tagi</Label>
+              <MultiSelectTags
+                availableTags={availableTags}
+                selectedTagIds={formData.tag_ids}
+                setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
+                maxTags={10}
+                data-testid="tags-multi-select"
+              />
+              {formErrors.tag_ids && <p className="text-sm text-destructive mt-1">{formErrors.tag_ids}</p>}
             </div>
           </div>
-        )}
-        <Label>Nazwa potrawy</Label>
-        <Input
-          id="name"
-          name="name"
-          placeholder="Nazwa potrawy"
-          value={formData.name}
-          onChange={handleInputChange}
-          maxLength={255}
-          className={cn("mt-1", formErrors.name && "border-destructive")}
-          data-testid="recipe-name-input"
-        />
-        {formErrors.name && (
-          <p className="text-sm text-destructive mt-1" data-testid="recipe-name-error">
-            {formErrors.name}
-          </p>
-        )}
-        <Label>Czas przygotowania</Label>
-        <Input
-          id="preparation_time"
-          name="preparation_time"
-          placeholder="Czas przygotowania"
-          value={formData.preparation_time || ""}
-          onChange={handleInputChange}
-          className={cn("mt-1", formErrors.preparation_time && "border-destructive")}
-          data-testid="preparation-time-input"
-        />
 
-        <div className="mt-4">
-          <Label>Tagi</Label>
-          <MultiSelectTags
-            availableTags={availableTags}
-            selectedTagIds={formData.tag_ids}
-            setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
-            maxTags={10}
-            data-testid="tags-multi-select"
-          />
-          {formErrors.tag_ids && <p className="text-sm text-destructive mt-1">{formErrors.tag_ids}</p>}
+          {/* Image section */}
+          {formData.image_url && (
+            <div className="lg:order-last">
+              <Label className="block mb-2">Obrazek przepisu</Label>
+              <div className="border rounded-xl overflow-hidden bg-muted/20">
+                <img src={formData.image_url} alt="Podgląd obrazka przepisu" className="w-full h-auto object-cover" />
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -409,6 +420,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
     }
   };
 
+  const handleUrlInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!isExtracting && formData.urlToImport?.trim()) {
+        handleExtractFromUrl();
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -508,6 +528,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
                   type="url"
                   value={formData.urlToImport || ""}
                   onChange={handleInputChange}
+                  onKeyDown={handleUrlInputKeyDown}
                   placeholder="https://kwestiasmaku.com/..."
                   className={cn("mt-1", formErrors.urlToImport && "border-destructive")}
                 />

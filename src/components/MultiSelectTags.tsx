@@ -1,7 +1,6 @@
 import React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
@@ -60,11 +59,18 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
     <div className="flex flex-col gap-2" data-testid={testId}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
+          <button
+            type="button"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
+            aria-controls="tags-popover"
+            className={cn(
+              "inline-flex items-center justify-between w-full h-9 px-3 py-2 text-sm",
+              "border border-input bg-transparent rounded-md shadow-xs",
+              "hover:bg-secondary hover:text-secondary-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              "disabled:cursor-not-allowed disabled:opacity-50"
+            )}
             onClick={() => setOpen(!open)}
             data-testid={`${testId}-trigger`}
           >
@@ -76,7 +82,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
                 : "Wybierz tagi"}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" data-testid={`${testId}-popover`}>
           <Command>
