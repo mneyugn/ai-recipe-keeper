@@ -17,31 +17,24 @@ interface RecipeListContainerProps {
 const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams, userId }) => {
   const { tags: availableTags, isLoading: isLoadingTags, error: tagsError } = useTags();
 
-  const tagSlugToId = useMemo(() => {
+  const tagIdToSlug = useMemo(() => {
     const map = new Map<string, string>();
-    availableTags.forEach((tag) => map.set(tag.slug, tag.id));
+    availableTags.forEach((tag) => map.set(tag.id, tag.slug));
     return map;
   }, [availableTags]);
-
-  const initialSelectedTagIds = useMemo(() => {
-    if (!initialParams.tag) return [];
-    return initialParams.tag
-      .split(",")
-      .map((slug) => tagSlugToId.get(slug))
-      .filter(Boolean) as string[];
-  }, [initialParams.tag, tagSlugToId]);
 
   const modifiedInitialParams = useMemo(
     () => ({
       ...initialParams,
-      tag: initialSelectedTagIds.length > 0 ? initialSelectedTagIds.join(",") : undefined,
+      // Keep original tag parameter (slugs) - useRecipeList will handle conversion
     }),
-    [initialParams, initialSelectedTagIds]
+    [initialParams]
   );
 
   const { state, actions } = useRecipeList({
     initialParams: modifiedInitialParams,
     userId,
+    tagIdToSlugMap: tagIdToSlug,
   });
 
   const sentryRef = useInfiniteScroll({
@@ -75,39 +68,47 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
     );
   }
 
-  // Enhanced empty state z animations
-  if (!state.isLoading && state.recipes.length === 0) {
-    return (
-      <div className="text-center py-12 animate-page-enter">
-        <div className="max-w-md mx-auto">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-rotate-gently">
-            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Brak przepisów</h3>
-          <p className="text-muted-foreground mb-4">
-            {state.filters.selectedTagIds.length > 0
-              ? "Nie znaleziono przepisów z wybranymi tagami."
-              : "Nie masz jeszcze żadnych przepisów. Dodaj swój pierwszy przepis!"}
-          </p>
+  // Empty State Component - as a separate component to not override filters
+  const EmptyStateContent = () => (
+    <div className="text-center py-12 animate-page-enter">
+      <div className="max-w-md mx-auto">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-rotate-gently">
+          <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Brak przepisów</h3>
+        <p className="text-muted-foreground mb-4">
+          {state.filters.selectedTagIds.length > 0
+            ? "Nie znaleziono przepisów z wybranymi tagami."
+            : "Nie masz jeszcze żadnych przepisów. Dodaj swój pierwszy przepis!"}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild className="animate-gentle-bounce">
-            <a href="/recipes/new">Dodaj pierwszy przepis</a>
+            <a href="/recipes/new">
+              {state.filters.selectedTagIds.length > 0 ? "Dodaj nowy przepis" : "Dodaj pierwszy przepis"}
+            </a>
           </Button>
+          {state.filters.selectedTagIds.length > 0 && (
+            <Button variant="outline" onClick={() => actions.changeTagFilter([])} className="animate-gentle-bounce">
+              Wyczyść filtry
+            </Button>
+          )}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-page-enter">
-      {/* Enhanced Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-slide-in-right">
+      {/* Enhanced Header */}
+      <div className="space-y-4 animate-slide-in-right max-w-6xl">
+        {/* Title and Counter */}
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Moje Przepisy</h1>
           {state.pagination.total > 0 && (
@@ -117,15 +118,24 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <TagFilter
-            availableTags={availableTags}
-            selectedTagIds={state.filters.selectedTagIds}
-            onSelectionChange={actions.changeTagFilter}
-            isLoading={isLoadingTags}
-            disabled={state.isLoading}
-          />
-          <SortSelector currentSort={state.filters.sort} onSortChange={actions.changeSort} disabled={state.isLoading} />
+        {/* Controls */}
+        <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+          <div className="flex-1 min-w-0">
+            <TagFilter
+              availableTags={availableTags}
+              selectedTagIds={state.filters.selectedTagIds}
+              onSelectionChange={actions.changeTagFilter}
+              isLoading={isLoadingTags}
+              disabled={state.isLoading || state.isFiltering}
+            />
+          </div>
+          <div className="flex items-center gap-3 xl:shrink-0">
+            <SortSelector
+              currentSort={state.filters.sort}
+              onSortChange={actions.changeSort}
+              disabled={state.isLoading || state.isFiltering}
+            />
+          </div>
         </div>
       </div>
 
@@ -133,31 +143,66 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         <div className="text-sm text-destructive animate-scale-in">Błąd przy ładowaniu tagów: {tagsError}</div>
       )}
 
-      {/* Enhanced Recipe Grid with Staggered Animations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {state.recipes.map((recipe, index) => {
-          // Stagger animation based on index
-          const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
-
-          return (
-            <div key={recipe.id} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-              <RecipeCard recipe={recipe} />
-            </div>
-          );
-        })}
-
-        {/* Enhanced Loading Skeletons */}
-        {(state.isLoading || state.isLoadingMore) &&
-          Array.from({ length: state.isLoadingMore ? 4 : 8 }).map((_, index) => {
+      {/* Enhanced Recipe Grid with Staggered Animations or Empty State */}
+      {!state.isLoading && !state.isFiltering && state.recipes.length === 0 ? (
+        <EmptyStateContent />
+      ) : (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          style={{
+            minHeight: state.isLoading ? "400px" : "auto",
+            contain: "layout style",
+            willChange: state.isLoading || state.isLoadingMore ? "contents" : "auto",
+            opacity: state.isFiltering ? 0.6 : 1,
+            transition: "opacity 0.2s ease-in-out",
+          }}
+        >
+          {state.recipes.map((recipe, index) => {
+            // Stagger animation based on index
             const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
 
             return (
-              <div key={`skeleton-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-                <RecipeCardSkeleton />
+              <div key={recipe.id} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
+                <RecipeCard recipe={recipe} />
               </div>
             );
           })}
-      </div>
+
+          {/* Optimized Loading Skeletons - only for initial loading, not filtering */}
+          {state.isLoading &&
+            Array.from({ length: 4 }).map((_, index) => {
+              const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+
+              return (
+                <div key={`skeleton-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
+                  <RecipeCardSkeleton />
+                </div>
+              );
+            })}
+
+          {/* Load More Skeletons - only for pagination */}
+          {state.isLoadingMore &&
+            Array.from({ length: 3 }).map((_, index) => {
+              const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+
+              return (
+                <div key={`skeleton-more-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
+                  <RecipeCardSkeleton />
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Filtering indicator */}
+      {state.isFiltering && (
+        <div className="fixed top-4 right-4 bg-background/80 backdrop-blur-sm border border-border rounded-lg px-3 py-2 shadow-lg z-50 animate-scale-in">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+            <span>Filtrowanie...</span>
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Load More Button */}
       {state.hasNextPage && !state.isLoadingMore && (

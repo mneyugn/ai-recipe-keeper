@@ -3,12 +3,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const RecipeCardSkeleton: React.FC = () => {
   return (
-    <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-md border-0 overflow-hidden">
-      {/* Hero Image Skeleton */}
-      <div className="h-52 animate-shimmer" />
+    <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-md border-0 overflow-hidden h-[380px] flex flex-col">
+      {/* Hero Image Skeleton - fixed height */}
+      <div className="h-48 bg-muted animate-pulse" />
 
-      {/* Content section */}
-      <div className="p-6 space-y-4">
+      {/* Content section - flex grow to fill remaining space */}
+      <div className="p-6 space-y-4 flex-1 flex flex-col">
         {/* Title section */}
         <div className="space-y-2">
           <Skeleton className="h-6 w-4/5" />
@@ -24,8 +24,11 @@ const RecipeCardSkeleton: React.FC = () => {
           <Skeleton className="h-6 w-14 rounded-full" />
         </div>
 
+        {/* Spacer to push action to bottom */}
+        <div className="flex-1" />
+
         {/* Action indicator skeleton */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mt-auto">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-4" />
         </div>

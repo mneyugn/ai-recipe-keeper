@@ -47,68 +47,70 @@ const TagFilter: React.FC<TagFilterProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtruj po tagach:</span>
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">Filtruj po tagach:</span>
 
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              disabled={disabled || isLoading}
-              className="justify-between min-w-[160px]"
-              aria-label="Wybierz tagi do filtrowania"
-            >
-              <span className="flex items-center gap-2">
-                <Tag className="h-4 w-4" />
-                <span>
-                  {selectedTagIds.length === 0
-                    ? "Wybierz tagi"
-                    : `${selectedTagIds.length} ${selectedTagIds.length === 1 ? "tag" : "tagi"}`}
+        <div className="flex items-center gap-3">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={disabled || isLoading}
+                className="justify-between min-w-[160px]"
+                aria-label="Wybierz tagi do filtrowania"
+              >
+                <span className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  <span>
+                    {selectedTagIds.length === 0
+                      ? "Wybierz tagi"
+                      : `${selectedTagIds.length} ${selectedTagIds.length === 1 ? "tag" : "tagi"}`}
+                  </span>
                 </span>
-              </span>
-              <ChevronDown className="h-4 w-4 opacity-50" />
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+
+            <PopoverContent className="w-64 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Szukaj tagów..." value={searchValue} onValueChange={setSearchValue} />
+                <CommandList>
+                  {isLoading ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      <div className="animate-spin inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                      Ładowanie tagów...
+                    </div>
+                  ) : (
+                    <>
+                      <CommandEmpty>Nie znaleziono tagów.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredTags.map((tag) => (
+                          <CommandItem
+                            key={tag.id}
+                            onSelect={() => handleTagToggle(tag.id)}
+                            className="flex items-center gap-3 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={selectedTagIds.includes(tag.id)}
+                              onCheckedChange={() => handleTagToggle(tag.id)}
+                            />
+                            <span className="flex-1">{tag.name}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {selectedTagIds.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={clearAllTags} className="text-xs">
+              Wyczyść wszystkie
             </Button>
-          </PopoverTrigger>
-
-          <PopoverContent className="w-64 p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Szukaj tagów..." value={searchValue} onValueChange={setSearchValue} />
-              <CommandList>
-                {isLoading ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    <div className="animate-spin inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
-                    Ładowanie tagów...
-                  </div>
-                ) : (
-                  <>
-                    <CommandEmpty>Nie znaleziono tagów.</CommandEmpty>
-                    <CommandGroup>
-                      {filteredTags.map((tag) => (
-                        <CommandItem
-                          key={tag.id}
-                          onSelect={() => handleTagToggle(tag.id)}
-                          className="flex items-center gap-3 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selectedTagIds.includes(tag.id)}
-                            onCheckedChange={() => handleTagToggle(tag.id)}
-                          />
-                          <span className="flex-1">{tag.name}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {selectedTagIds.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearAllTags} className="text-xs">
-            Wyczyść wszystkie
-          </Button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Wybrane tagi jako Badge */}

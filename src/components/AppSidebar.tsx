@@ -67,13 +67,14 @@ const MobileBottomNav: React.FC<{
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-50 mx-3 mb-3 
+      className="lg:hidden fixed bottom-0 inset-x-0 z-50 mx-3 
                  rounded-3xl backdrop-blur-2xl bg-gradient-to-r from-background/95 via-background/98 to-background/95
                  border-2 border-border/40 shadow-2xl shadow-black/25
                  before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-r 
                  before:from-primary/8 before:via-accent/8 before:to-primary/8 before:blur-xl before:-z-10
                  ring-1 ring-white/10"
       style={{
+        marginBottom: `calc(0.75rem + env(safe-area-inset-bottom, 0px))`,
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         background: "rgba(255, 255, 255, 0.75)",
         backdropFilter: "blur(40px) saturate(180%)",

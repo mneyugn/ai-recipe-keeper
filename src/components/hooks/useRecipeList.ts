@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { RecipeListQueryParams, RecipeListItemDTO, PaginationDTO, RecipeSortOption } from "../../types";
 
 // Typy lokalne dla hook'a
@@ -6,6 +6,7 @@ interface RecipeListViewModel {
   recipes: RecipeListItemDTO[];
   isLoading: boolean;
   isLoadingMore: boolean;
+  isFiltering: boolean; // New state for filtering
   error: string | null;
   pagination: PaginationDTO;
   hasNextPage: boolean;
@@ -21,6 +22,7 @@ interface FilterState {
 interface UseRecipeListParams {
   initialParams: RecipeListQueryParams;
   userId: string;
+  tagIdToSlugMap?: Map<string, string>; // Mapa UUID -> slug dla konwersji
 }
 
 interface UseRecipeListReturn {
@@ -38,6 +40,7 @@ const initialState: RecipeListViewModel = {
   recipes: [],
   isLoading: true,
   isLoadingMore: false,
+  isFiltering: false, // Initial state for filtering
   error: null,
   pagination: {
     page: 1,
@@ -52,14 +55,58 @@ const initialState: RecipeListViewModel = {
   },
 };
 
-export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListParams): UseRecipeListReturn => {
+export const useRecipeList = ({
+  initialParams,
+  userId: _userId,
+  tagIdToSlugMap,
+}: UseRecipeListParams): UseRecipeListReturn => {
+  // Convert slugs to tagIds from URL parameters
+  const convertSlugsToTagIds = useCallback(
+    (slugs: string[]): string[] => {
+      if (!tagIdToSlugMap || slugs.length === 0) return [];
+
+      const tagIds: string[] = [];
+      for (const [tagId, slug] of tagIdToSlugMap.entries()) {
+        if (slugs.includes(slug)) {
+          tagIds.push(tagId);
+        }
+      }
+      return tagIds;
+    },
+    [tagIdToSlugMap]
+  );
+
+  // Inicjalizacja stanu z konwersją slug -> tagIds
+  const initialSelectedTagIds = useMemo(() => {
+    if (!initialParams.tag) return [];
+    const slugs = initialParams.tag.split(",");
+    return convertSlugsToTagIds(slugs);
+  }, [initialParams.tag, convertSlugsToTagIds]);
+
   const [state, setState] = useState<RecipeListViewModel>({
     ...initialState,
     filters: {
       sort: initialParams.sort || "created_at:desc",
-      selectedTagIds: initialParams.tag ? initialParams.tag.split(",") : [],
+      selectedTagIds: initialSelectedTagIds,
     },
   });
+
+  // Convert tagIds to slugs for API
+  const convertTagIdsToSlugs = useCallback(
+    (tagIds: string[]): string[] => {
+      if (!tagIdToSlugMap || tagIds.length === 0) return [];
+
+      const slugs: string[] = [];
+      for (const tagId of tagIds) {
+        const slug = tagIdToSlugMap.get(tagId);
+        if (slug) {
+          slugs.push(slug);
+        }
+      }
+      return slugs;
+    },
+    [tagIdToSlugMap]
+  );
 
   // Aktualizacja URL
   const updateURL = useCallback((params: RecipeListQueryParams) => {
@@ -91,12 +138,13 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
 
   // Funkcja ładowania przepisów
   const loadRecipes = useCallback(
-    async (params: RecipeListQueryParams, append = false) => {
+    async (params: RecipeListQueryParams, append = false, isFilteringAction = false) => {
       try {
         setState((prev) => ({
           ...prev,
-          isLoading: !append,
+          isLoading: !append && !isFilteringAction,
           isLoadingMore: append,
+          isFiltering: isFilteringAction && !append,
           error: null,
         }));
 
@@ -130,6 +178,7 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
           hasNextPage: data.pagination.page < data.pagination.total_pages,
           isLoading: false,
           isLoadingMore: false,
+          isFiltering: false,
         }));
 
         // Aktualizacja URL dla SEO i nawigacji
@@ -142,6 +191,7 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
           error: error instanceof Error ? error.message : "Wystąpił błąd",
           isLoading: false,
           isLoadingMore: false,
+          isFiltering: false,
         }));
       }
     },
@@ -154,11 +204,14 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
       return;
     }
 
+    // Convert tagIds to slugs for API
+    const tagSlugs = convertTagIdsToSlugs(state.filters.selectedTagIds);
+
     const nextPageParams: RecipeListQueryParams = {
       ...initialParams,
       page: state.pagination.page + 1,
       sort: state.filters.sort,
-      tag: state.filters.selectedTagIds.length > 0 ? state.filters.selectedTagIds.join(",") : undefined,
+      tag: tagSlugs.length > 0 ? tagSlugs.join(",") : undefined,
     };
 
     await loadRecipes(nextPageParams, true);
@@ -170,6 +223,7 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
     state.filters,
     initialParams,
     loadRecipes,
+    convertTagIdsToSlugs,
   ]);
 
   // Zmiana sortowania
@@ -180,18 +234,21 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
         filters: { ...prev.filters, sort },
       }));
 
+      // Konwersja tagIds na slugs dla API
+      const tagSlugs = convertTagIdsToSlugs(state.filters.selectedTagIds);
+
       const newParams: RecipeListQueryParams = {
         ...initialParams,
         sort,
         page: 1,
-        tag: state.filters.selectedTagIds.length > 0 ? state.filters.selectedTagIds.join(",") : undefined,
+        tag: tagSlugs.length > 0 ? tagSlugs.join(",") : undefined,
       };
       loadRecipes(newParams);
     },
-    [initialParams, state.filters.selectedTagIds, loadRecipes]
+    [initialParams, state.filters.selectedTagIds, loadRecipes, convertTagIdsToSlugs]
   );
 
-  // Zmiana filtrów tagów
+  // Change tag filters
   const changeTagFilter = useCallback(
     (tagIds: string[]) => {
       setState((prev) => ({
@@ -199,27 +256,33 @@ export const useRecipeList = ({ initialParams, userId: _userId }: UseRecipeListP
         filters: { ...prev.filters, selectedTagIds: tagIds },
       }));
 
+      // Convert tagIds to slugs for API
+      const tagSlugs = convertTagIdsToSlugs(tagIds);
+
       const newParams: RecipeListQueryParams = {
         ...initialParams,
-        tag: tagIds.length > 0 ? tagIds.join(",") : undefined,
+        tag: tagSlugs.length > 0 ? tagSlugs.join(",") : undefined,
         page: 1,
         sort: state.filters.sort,
       };
-      loadRecipes(newParams);
+      loadRecipes(newParams, false, true); // Pass true for isFilteringAction
     },
-    [initialParams, state.filters.sort, loadRecipes]
+    [initialParams, state.filters.sort, loadRecipes, convertTagIdsToSlugs]
   );
 
-  // Odświeżenie listy
+  // Refresh list
   const refresh = useCallback(async () => {
+    // Convert tagIds to slugs for API
+    const tagSlugs = convertTagIdsToSlugs(state.filters.selectedTagIds);
+
     const currentParams: RecipeListQueryParams = {
       ...initialParams,
       page: 1,
       sort: state.filters.sort,
-      tag: state.filters.selectedTagIds.length > 0 ? state.filters.selectedTagIds.join(",") : undefined,
+      tag: tagSlugs.length > 0 ? tagSlugs.join(",") : undefined,
     };
-    await loadRecipes(currentParams);
-  }, [initialParams, state.filters, loadRecipes]);
+    await loadRecipes(currentParams, false, true); // Pass true for isFilteringAction
+  }, [initialParams, state.filters, loadRecipes, convertTagIdsToSlugs]);
 
   // Ładowanie początkowe
   useEffect(() => {
