@@ -25,6 +25,7 @@ export interface FloatingInputProps extends Omit<InputProps, "placeholder"> {
   label: string;
   error?: string;
   helperText?: string;
+  "data-testid"?: string;
 }
 
 const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
@@ -87,7 +88,14 @@ const FloatingInput = React.forwardRef<HTMLInputElement, FloatingInputProps>(
         </label>
 
         {/* Enhanced Error Message with slide animation */}
-        {error && <p className="text-sm text-destructive mt-1 animate-slide-in-right">{error}</p>}
+        {error && (
+          <p
+            className="text-sm text-destructive mt-1 animate-slide-in-right"
+            data-testid={props["data-testid"]?.replace("-input", "-error")}
+          >
+            {error}
+          </p>
+        )}
 
         {/* Helper Text */}
         {helperText && !error && <p className="text-sm text-muted-foreground mt-1 animate-fade-in-up">{helperText}</p>}

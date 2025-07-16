@@ -36,15 +36,15 @@ export class RegisterPage extends BasePage {
 
   // Actions
   async fillEmail(email: string): Promise<void> {
-    await this.fillInput(this.emailInput, email);
+    await this.emailInput.pressSequentially(email, { delay: 50 });
   }
 
   async fillPassword(password: string): Promise<void> {
-    await this.fillInput(this.passwordInput, password);
+    await this.passwordInput.pressSequentially(password, { delay: 50 });
   }
 
   async fillConfirmPassword(confirmPassword: string): Promise<void> {
-    await this.fillInput(this.confirmPasswordInput, confirmPassword);
+    await this.confirmPasswordInput.pressSequentially(confirmPassword, { delay: 50 });
   }
 
   async clickSubmit(): Promise<void> {

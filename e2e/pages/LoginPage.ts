@@ -32,11 +32,11 @@ export class LoginPage extends BasePage {
 
   // Actions
   async fillEmail(email: string): Promise<void> {
-    await this.fillInput(this.emailInput, email);
+    await this.emailInput.pressSequentially(email, { delay: 40 });
   }
 
   async fillPassword(password: string): Promise<void> {
-    await this.fillInput(this.passwordInput, password);
+    await this.passwordInput.pressSequentially(password, { delay: 50 });
   }
 
   async clickSubmit(): Promise<void> {

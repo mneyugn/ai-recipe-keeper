@@ -100,24 +100,24 @@ export class RecipeFormPage extends BasePage {
 
   // Navigation actions
   async clickManualTab(): Promise<void> {
-    await this.clickElement(this.tabTriggerManual);
-    // Wait for the tab to be active
-    await this.page.waitForTimeout(600);
-    await expect(this.tabTriggerManual).toHaveAttribute("data-state", "active");
+    await expect(async () => {
+      await this.clickElement(this.tabTriggerManual);
+      await expect(this.tabTriggerManual).toHaveAttribute("data-state", "active");
+    }).toPass();
   }
 
   async clickTextTab(): Promise<void> {
-    await this.clickElement(this.tabTriggerText);
-    // Wait for the tab to be active
-    await this.page.waitForTimeout(600);
-    await expect(this.tabTriggerText).toHaveAttribute("data-state", "active");
+    await expect(async () => {
+      await this.clickElement(this.tabTriggerText);
+      await expect(this.tabTriggerText).toHaveAttribute("data-state", "active");
+    }).toPass();
   }
 
   async clickUrlTab(): Promise<void> {
-    await this.clickElement(this.tabTriggerUrl);
-    // Wait for the tab to be active
-    await this.page.waitForTimeout(600);
-    await expect(this.tabTriggerUrl).toHaveAttribute("data-state", "active");
+    await expect(async () => {
+      await this.clickElement(this.tabTriggerUrl);
+      await expect(this.tabTriggerUrl).toHaveAttribute("data-state", "active");
+    }).toPass();
   }
 
   // Basic form actions
@@ -134,7 +134,10 @@ export class RecipeFormPage extends BasePage {
   }
 
   async clickSubmit(): Promise<void> {
-    await this.clickElement(this.submitButton);
+    await expect(async () => {
+      await expect(this.submitButton).toBeEnabled();
+      await this.clickElement(this.submitButton);
+    }).toPass();
   }
 
   // Ingredients actions

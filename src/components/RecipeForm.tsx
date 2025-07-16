@@ -125,6 +125,11 @@ const RecipeFormFields = ({
           className={cn("mt-1", formErrors.name && "border-destructive")}
           data-testid="recipe-name-input"
         />
+        {formErrors.name && (
+          <p className="text-sm text-destructive mt-1" data-testid="recipe-name-error">
+            {formErrors.name}
+          </p>
+        )}
         <Label>Czas przygotowania</Label>
         <Input
           id="preparation_time"
@@ -661,7 +666,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
       )}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
+        <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto" data-testid="submit-button">
           {isLoading ? "Zapisywanie..." : mode === "edit" ? "Zapisz zmiany" : "Zapisz przepis"}
         </Button>
       </div>

@@ -63,6 +63,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         JSON.stringify({
           success: true,
           message: "Sprawdź swoją skrzynkę email i potwierdź adres, aby dokończyć rejestrację",
+          redirectTo: "/auth/login",
           user: {
             id: data.user.id,
             email: data.user.email,

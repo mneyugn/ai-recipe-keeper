@@ -62,26 +62,20 @@ export function RegisterForm({ className }: RegisterFormProps) {
 
       if (result.error) {
         setGlobalError(result.error);
+        setIsLoading(false); // Zatrzymaj ładowanie w przypadku błędu
         return;
       }
 
-      if (result.success) {
-        if (result.message) {
-          // Pokazujemy komunikat o potwierdzeniu email jeśli potrzeba
-          setGlobalError(null);
-          // Można dodać komponente sukcesu tutaj
-          alert(result.message);
-          if (result.redirectTo) {
-            window.location.href = result.redirectTo;
-          }
-        } else {
-          // Przekierowanie bezpośrednio po sukcesie
-          window.location.href = result.redirectTo || "/recipes";
-        }
+      if (result.success && result.redirectTo) {
+        // Zawsze przekierowuj, jeśli redirectTo jest obecne
+        window.location.href = result.redirectTo;
+      } else {
+        // Obsługa nieoczekiwanego przypadku braku redirectTo
+        setGlobalError("Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
+        setIsLoading(false);
       }
     } catch {
       setGlobalError("Wystąpił błąd połączenia. Spróbuj ponownie.");
-    } finally {
       setIsLoading(false);
     }
   };

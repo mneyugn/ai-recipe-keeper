@@ -12,10 +12,10 @@ interface LoginFormProps {
   className?: string;
 }
 
-type FormErrors = {
+interface FormErrors {
   email?: string;
   password?: string;
-};
+}
 
 export function LoginForm({ className }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginFormData>({
