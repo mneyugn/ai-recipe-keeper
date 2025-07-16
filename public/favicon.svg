@@ -1,0 +1,36 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient dokładnie jak w bg-primary -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color: oklch(0.65 0.15 25)"/>
+      <stop offset="100%" style="stop-color: oklch(0.75 0.20 65)"/>
+    </linearGradient>
+    
+    <!-- Shadow effect -->
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    
+    <!-- Glow effect -->
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background glow effect - mniejszy margin -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="oklch(0.65 0.15 25)" opacity="0.15" filter="url(#glow)"/>
+  
+  <!-- Main container - mniejszy margin -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="url(#bgGradient)" filter="url(#shadow)"/>
+  
+  <!-- ChefHat SVG - większa skala i mniejszy translate -->
+  <g transform="translate(4.5, 4.5)" fill="none" stroke="oklch(0.98 0.008 45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Dokładny path z lucide chef-hat - większa skala -->
+    <path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z" transform="scale(0.95)"/>
+    <path d="M6 17h12" transform="scale(0.95)"/>
+  </g>
+</svg>
