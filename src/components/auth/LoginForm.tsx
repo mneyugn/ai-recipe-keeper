@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
 import { authService } from "@/lib/services/auth.service";
@@ -13,10 +12,10 @@ interface LoginFormProps {
   className?: string;
 }
 
-interface FormErrors {
+type FormErrors = {
   email?: string;
   password?: string;
-}
+};
 
 export function LoginForm({ className }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginFormData>({
@@ -99,54 +98,44 @@ export function LoginForm({ className }: LoginFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form-element" noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="nazwa@przykład.pl"
-              value={formData.email}
-              onChange={handleChange("email")}
-              aria-invalid={!!errors.email}
-              disabled={isLoading}
-              data-testid="login-email-input"
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive" data-testid="login-email-error">
-                {errors.email}
-              </p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="login-form-element" noValidate>
+          <FloatingInput
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange("email")}
+            error={errors.email}
+            disabled={isLoading}
+            data-testid="login-email-input"
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Wprowadź hasło"
-              value={formData.password}
-              onChange={handleChange("password")}
-              aria-invalid={!!errors.password}
-              disabled={isLoading}
-              data-testid="login-password-input"
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive" data-testid="login-password-error">
-                {errors.password}
-              </p>
-            )}
-          </div>
+          <FloatingInput
+            type="password"
+            label="Hasło"
+            value={formData.password}
+            onChange={handleChange("password")}
+            error={errors.password}
+            disabled={isLoading}
+            data-testid="login-password-input"
+          />
 
           <Button type="submit" className="w-full" disabled={isLoading} data-testid="login-submit-button">
             {isLoading ? "Logowanie..." : "Zaloguj się"}
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Button variant="link" asChild data-testid="login-forgot-password-link">
-            <a href="/auth/reset">Zapomniałeś hasła?</a>
-          </Button>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nie masz konta?{" "}
+            <Button variant="link" asChild className="p-0 h-auto" data-testid="login-register-link">
+              <a href="/auth/register">Zarejestruj się</a>
+            </Button>
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            <Button variant="link" asChild className="p-0 h-auto" data-testid="login-forgot-password-link">
+              <a href="/auth/reset">Zapomniałeś hasła?</a>
+            </Button>
+          </p>
         </div>
       </CardContent>
     </Card>

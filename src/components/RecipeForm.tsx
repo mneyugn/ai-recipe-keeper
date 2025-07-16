@@ -24,6 +24,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import DynamicFieldList from "@/components/DynamicFieldList";
 import MultiSelectTags from "@/components/MultiSelectTags";
@@ -78,17 +79,168 @@ const recipeSchema = z.object({
 type RecipeFormData = z.infer<typeof recipeSchema>;
 
 interface RecipeFormProps {
-  recipeData?: RecipeDetailDTO | null; // Data for editing, null for new
-  recipeId?: string; // Explicit recipeId for edit mode consistency
+  recipeData?: RecipeDetailDTO | null;
+  recipeId?: string;
   mode: "new" | "edit";
 }
+
+// Helper component for rendering the main form fields
+const RecipeFormFields = ({
+  formData,
+  formErrors,
+  handleInputChange,
+  setFormData,
+  availableTags,
+}: {
+  formData: RecipeFormData;
+  formErrors: Record<string, string>;
+  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  setFormData: React.Dispatch<React.SetStateAction<RecipeFormData>>;
+  availableTags: TagDTO[];
+}) => (
+  <div className="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>Podstawowe informacje</CardTitle>
+        <CardDescription>Podaj nazwę, czas przygotowania i otaguj swój przepis.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Obrazek przepisu - przeniesiony wyżej */}
+        {formData.image_url && (
+          <div className="text-center">
+            <Label>Obrazek przepisu</Label>
+            <div className="mt-2 border rounded-xl overflow-hidden bg-muted/20">
+              <img src={formData.image_url} alt="Podgląd obrazka przepisu" className="w-full max-h-64 object-cover" />
+            </div>
+          </div>
+        )}
+        <Label>Nazwa potrawy</Label>
+        <Input
+          id="name"
+          name="name"
+          placeholder="Nazwa potrawy"
+          value={formData.name}
+          onChange={handleInputChange}
+          maxLength={255}
+          className={cn("mt-1", formErrors.name && "border-destructive")}
+          data-testid="recipe-name-input"
+        />
+        <Label>Czas przygotowania</Label>
+        <Input
+          id="preparation_time"
+          name="preparation_time"
+          placeholder="Czas przygotowania"
+          value={formData.preparation_time || ""}
+          onChange={handleInputChange}
+          className={cn("mt-1", formErrors.preparation_time && "border-destructive")}
+          data-testid="preparation-time-input"
+        />
+
+        <div className="mt-4">
+          <Label>Tagi</Label>
+          <MultiSelectTags
+            availableTags={availableTags}
+            selectedTagIds={formData.tag_ids}
+            setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
+            maxTags={10}
+            data-testid="tags-multi-select"
+          />
+          {formErrors.tag_ids && <p className="text-sm text-destructive mt-1">{formErrors.tag_ids}</p>}
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Składniki</CardTitle>
+        <CardDescription>Wylistuj wszystkie potrzebne składniki, każdy w osobnym polu.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DynamicFieldList
+          items={formData.ingredients}
+          setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, ingredients: newItems }))}
+          label="Składniki"
+          fieldPlaceholder="np. 1 szklanka mąki"
+          addButtonLabel="Dodaj składnik"
+          minItems={1}
+          maxItems={50}
+          maxCharsPerItem={200}
+          fieldType="input"
+          error={formErrors.ingredients}
+          data-testid="ingredients-dynamic-list"
+        />
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Kroki przygotowania</CardTitle>
+        <CardDescription>Opisz kolejne etapy przygotowania potrawy.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DynamicFieldList
+          items={formData.steps}
+          setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, steps: newItems }))}
+          label="Kroki przygotowania"
+          fieldPlaceholder="Opisz krok przygotowania"
+          addButtonLabel="Dodaj krok"
+          minItems={1}
+          maxItems={50}
+          maxCharsPerItem={2000}
+          fieldType="textarea"
+          textareaRows={3}
+          fieldLabel={(index: number) => `Krok ${index + 1}`}
+          error={formErrors.steps}
+          data-testid="steps-dynamic-list"
+        />
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Dodatkowe informacje</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {formData.source_url && (
+          <div>
+            <Label htmlFor="source_url">Źródło (URL)</Label>
+            <Input
+              id="source_url"
+              name="source_url"
+              value={formData.source_url}
+              onChange={handleInputChange}
+              readOnly
+              className={cn("mt-1 bg-muted", formErrors.source_url && "border-destructive")}
+            />
+            {formErrors.source_url && <p className="text-sm text-destructive mt-1">{formErrors.source_url}</p>}
+          </div>
+        )}
+
+        <div>
+          <Label htmlFor="notes">Notatki</Label>
+          <Textarea
+            id="notes"
+            name="notes"
+            value={formData.notes}
+            onChange={handleInputChange}
+            rows={4}
+            maxLength={5000}
+            className={cn("mt-1", formErrors.notes && "border-destructive")}
+            data-testid="notes-textarea"
+          />
+          {formErrors.notes && <p className="text-sm text-destructive mt-1">{formErrors.notes}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) => {
   const initialFormData: RecipeFormData = {
     id: recipeData?.id || undefined,
     name: recipeData?.name || "",
-    ingredients: recipeData?.ingredients || [""], // Start with one empty ingredient
-    steps: recipeData?.steps || [""], // Start with one empty step
+    ingredients: recipeData?.ingredients || [""],
+    steps: recipeData?.steps || [""],
     preparation_time: recipeData?.preparation_time || "",
     source_type: (recipeData?.source_type as RecipeSourceType) || "manual",
     source_url: recipeData?.source_url || "",
@@ -112,25 +264,16 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
   const [showReprocessDialog, setShowReprocessDialog] = useState(false);
 
   useEffect(() => {
-    console.log("RecipeForm mounted, mode:", mode, "recipeId:", recipeId);
-    if (mode === "edit" && recipeData) {
-      console.log("Populating form with recipeData:", recipeData);
-    }
-  }, [mode, recipeData, recipeId]);
-
-  useEffect(() => {
     const loadTags = async () => {
       const tags = await fetchTags();
       setAvailableTags(tags);
     };
-
     loadTags();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Czyścimy błąd dla pola po jego zmianie
     if (formErrors[name]) {
       setFormErrors((prev) => {
         const { [name]: removed, ...rest } = prev;
@@ -144,43 +287,24 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
       setFormErrors({ rawTextToProcess: "Wprowadź tekst przepisu do przetworzenia" });
       return;
     }
-
     setIsExtracting(true);
     setFormErrors({});
-
     try {
       const response = await fetch("/api/recipe/extract-from-text", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: formData.rawTextToProcess,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: formData.rawTextToProcess }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
-
         if (response.status === 429) {
-          setFormErrors({
-            api: "Przekroczono dzienny limit ekstrakcji (100/dzień). Spróbuj ponownie jutro.",
-          });
-        } else if (response.status === 422 || response.status === 500) {
-          setFormErrors({
-            api: "Nie udało się przetworzyć przepisu z podanego tekstu. Spróbuj ponownie lub wprowadź dane manualnie.",
-          });
+          setFormErrors({ api: "Przekroczono dzienny limit ekstrakcji (100/dzień). Spróbuj ponownie jutro." });
         } else {
-          setFormErrors({
-            api: errorData.error?.message || "Wystąpił błąd podczas przetwarzania tekstu.",
-          });
+          setFormErrors({ api: errorData.error?.message || "Wystąpił błąd podczas przetwarzania tekstu." });
         }
         return;
       }
-
       const extractionResponse: ExtractFromTextResponseDTO = await response.json();
-
-      // Wypełnianie formularza danymi z ekstrakcji
       setFormData((prev) => ({
         ...prev,
         name: extractionResponse.extracted_data.name,
@@ -192,23 +316,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
         extractionLogId: extractionResponse.extraction_log_id,
         aiFeedback: null,
       }));
-
-      // Ustaw sugerowane tagi
       const suggestedTagIds = availableTags
         .filter((tag) => extractionResponse.extracted_data.suggested_tags?.includes(tag.slug))
         .map((tag) => tag.id);
-
       if (suggestedTagIds.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          tag_ids: [...new Set([...prev.tag_ids, ...suggestedTagIds])],
-        }));
+        setFormData((prev) => ({ ...prev, tag_ids: [...new Set([...prev.tag_ids, ...suggestedTagIds])] }));
       }
     } catch (error) {
       console.error("Error extracting from text:", error);
-      setFormErrors({
-        api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie.",
-      });
+      setFormErrors({ api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie." });
     } finally {
       setIsExtracting(false);
     }
@@ -216,51 +332,27 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
 
   const handleReprocessText = async () => {
     setShowReprocessDialog(false);
-    setFormData((prev) => ({
-      ...prev,
-      rawTextToProcess: prev.originalRawText,
-    }));
+    setFormData((prev) => ({ ...prev, rawTextToProcess: prev.originalRawText }));
     await handleExtractFromText();
   };
 
   const handleFeedbackSubmit = async (feedback: FeedbackType) => {
     if (!formData.extractionLogId) return;
-
     try {
-      const response = await fetch(`/api/recipe/extraction/${formData.extractionLogId}/feedback`, {
+      await fetch(`/api/recipe/extraction/${formData.extractionLogId}/feedback`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          feedback: feedback,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback }),
       });
-
-      if (!response.ok) {
-        console.error("Error submitting feedback:", response.status, response.statusText);
-        // Even if feedback fails, we can update the UI state
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        aiFeedback: feedback,
-      }));
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      // Even if feedback fails, we can update the UI state
-      setFormData((prev) => ({
-        ...prev,
-        aiFeedback: feedback,
-      }));
+    } finally {
+      setFormData((prev) => ({ ...prev, aiFeedback: feedback }));
     }
   };
 
   const toggleOriginalTextVisibility = () => {
-    setFormData((prev) => ({
-      ...prev,
-      isOriginalTextVisible: !prev.isOriginalTextVisible,
-    }));
+    setFormData((prev) => ({ ...prev, isOriginalTextVisible: !prev.isOriginalTextVisible }));
   };
 
   const handleExtractFromUrl = async () => {
@@ -268,53 +360,24 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
       setFormErrors({ urlToImport: "Wprowadź URL przepisu do importu" });
       return;
     }
-
     setIsExtracting(true);
     setFormErrors({});
-
     try {
       const response = await fetch("/api/recipe/extract-from-url", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: formData.urlToImport,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: formData.urlToImport }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
-
-        if (response.status === 400) {
-          setFormErrors({
-            urlToImport: errorData.error?.message || "Nieprawidłowy URL",
-          });
-        } else if (response.status === 403) {
-          setFormErrors({
-            api:
-              errorData.error?.message ||
-              "Strona blokuje automatyczne pobieranie treści. Spróbuj skopiować tekst przepisu i użyć opcji 'Importuj z tekstu'.",
-          });
-        } else if (response.status === 422) {
-          setFormErrors({
-            api: "Nie udało się pobrać przepisu z podanego URL. Sprawdź czy adres jest poprawny i spróbuj ponownie.",
-          });
-        } else if (response.status === 429) {
-          setFormErrors({
-            api: "Przekroczono dzienny limit ekstrakcji (100/dzień). Spróbuj ponownie jutro.",
-          });
+        if (response.status === 429) {
+          setFormErrors({ api: "Przekroczono dzienny limit ekstrakcji (100/dzień). Spróbuj ponownie jutro." });
         } else {
-          setFormErrors({
-            api: errorData.error?.message || "Wystąpił błąd podczas importu z URL.",
-          });
+          setFormErrors({ api: errorData.error?.message || "Wystąpił błąd podczas importu z URL." });
         }
         return;
       }
-
       const extractionResponse: ExtractFromUrlResponseDTO = await response.json();
-
-      // Wypełnianie formularza danymi z ekstrakcji
       setFormData((prev) => ({
         ...prev,
         name: extractionResponse.extracted_data.name,
@@ -327,23 +390,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
         extractionLogId: extractionResponse.extraction_log_id,
         aiFeedback: null,
       }));
-
-      // Ustaw sugerowane tagi
       const suggestedTagIds = availableTags
         .filter((tag) => extractionResponse.extracted_data.suggested_tags?.includes(tag.slug))
         .map((tag) => tag.id);
-
       if (suggestedTagIds.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          tag_ids: [...new Set([...prev.tag_ids, ...suggestedTagIds])],
-        }));
+        setFormData((prev) => ({ ...prev, tag_ids: [...new Set([...prev.tag_ids, ...suggestedTagIds])] }));
       }
     } catch (error) {
       console.error("Error extracting from URL:", error);
-      setFormErrors({
-        api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie.",
-      });
+      setFormErrors({ api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie." });
     } finally {
       setIsExtracting(false);
     }
@@ -353,13 +408,9 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
     e.preventDefault();
     setIsLoading(true);
     setFormErrors({});
-
     try {
-      // Walidacja za pomocą Zod
       const validatedData = recipeSchema.parse(formData);
-
-      // Przygotowanie danych dla API
-      const recipeData: CreateRecipeCommand | UpdateRecipeCommand = {
+      const recipeApiData: CreateRecipeCommand | UpdateRecipeCommand = {
         name: validatedData.name,
         ingredients: validatedData.ingredients,
         steps: validatedData.steps,
@@ -373,648 +424,264 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
 
       let response: Response;
       if (mode === "new") {
-        // Tworzenie nowego przepisu
         response = await fetch("/api/recipes", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(recipeData),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recipeApiData),
         });
       } else {
-        // Aktualizacja istniejącego przepisu
-        if (!recipeId) {
-          throw new Error("Brak ID przepisu do aktualizacji");
-        }
+        if (!recipeId) throw new Error("Brak ID przepisu do aktualizacji");
         response = await fetch(`/api/recipes/${recipeId}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(recipeData),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(recipeApiData),
         });
       }
 
       if (!response.ok) {
         const errorData = await response.json();
-
-        if (response.status === 400) {
-          const details = errorData.error?.details;
-          if (details) {
-            // Mapowanie błędów walidacji z API do formularza
-            const mappedErrors: Record<string, string> = {};
-            Object.entries(details).forEach(([field, errors]) => {
-              if (Array.isArray(errors) && errors.length > 0) {
-                mappedErrors[field] = errors[0];
-              }
-            });
-            setFormErrors(mappedErrors);
-          } else {
-            setFormErrors({
-              api: errorData.error?.message || "Błąd walidacji danych.",
-            });
-          }
-        } else if (response.status === 404) {
-          setFormErrors({
-            api: "Przepis nie został znaleziony.",
-          });
-        } else {
-          setFormErrors({
-            api: errorData.error?.message || "Wystąpił błąd podczas zapisywania przepisu.",
-          });
-        }
+        setFormErrors({ api: errorData.error?.message || "Wystąpił błąd podczas zapisywania przepisu." });
         return;
       }
 
-      // Sukces - pobierz dane utworzonego/zaktualizowanego przepisu
       const savedRecipe: RecipeDetailDTO = await response.json();
-
-      // Przekierowanie na stronę szczegółów przepisu
+      // Store success message in session storage to show after redirect
+      sessionStorage.setItem(
+        "toastMessage",
+        mode === "edit" ? "Zmiany w przepisie zostały zapisane." : "Nowy przepis został pomyślnie utworzony."
+      );
       window.location.href = `/recipes/${savedRecipe.id}`;
     } catch (error) {
-      console.error("Error submitting form:", error);
-
       if (error instanceof z.ZodError) {
-        // Konwertujemy błędy Zod na format formularza
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          const path = err.path.join(".");
-          errors[path] = err.message;
+          errors[err.path.join(".")] = err.message;
         });
         setFormErrors(errors);
-
-        // Przewiń do pierwszego błędu
-        const firstErrorField = document.querySelector(".text-red-500");
-        if (firstErrorField) {
-          firstErrorField.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
       } else {
-        setFormErrors({
-          api: "Wystąpił błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie.",
-        });
-        // Przewiń do komunikatu o błędzie API
-        const apiError = document.querySelector("[data-error='api']");
-        if (apiError) {
-          apiError.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
+        setFormErrors({ api: "Wystąpił nieoczekiwany błąd. Spróbuj ponownie." });
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // TODO: Implement DynamicFieldList for ingredients and steps
-  // TODO: Implement MultiSelectTags for tags
-  // TODO: Implement AI mode tabs/sections (Paste Text, Import URL)
-  // TODO: Implement AI feedback buttons
-  // TODO: Implement image display (non-editable for MVP)
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" data-testid="recipe-form">
-      {/* Mode selection (Tabs) */}
+    <form onSubmit={handleSubmit} className="space-y-8" data-testid="recipe-form">
       <Tabs
         defaultValue="url"
         value={currentMode}
         onValueChange={(value) => setCurrentMode(value as "manual" | "text" | "url")}
         data-testid="recipe-form-tabs"
       >
-        <TabsList className="grid w-full grid-cols-3" data-testid="recipe-form-tabs-list">
-          <TabsTrigger value="url" data-testid="tab-trigger-url">
+        <TabsList className="grid w-[600px] mx-auto grid-cols-3" data-testid="recipe-form-tabs-list">
+          <TabsTrigger value="url" className="font-medium" data-testid="tab-trigger-url">
             Importuj z URL
           </TabsTrigger>
-          <TabsTrigger value="text" data-testid="tab-trigger-text">
+          <TabsTrigger value="text" className="font-medium" data-testid="tab-trigger-text">
             Wklej tekst
           </TabsTrigger>
-          <TabsTrigger value="manual" data-testid="tab-trigger-manual">
-            Manualne dodawanie
+          <TabsTrigger value="manual" className="font-medium" data-testid="tab-trigger-manual">
+            Dodaj manualnie
           </TabsTrigger>
         </TabsList>
 
-        {/* Manual Mode Tab */}
-        <TabsContent value="manual" className="space-y-6 mt-6" data-testid="manual-mode-content">
-          <div>
-            <Label htmlFor="name">Nazwa potrawy</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              maxLength={255}
-              className={cn("mt-1", formErrors.name && "border-red-500")}
-              data-testid="recipe-name-input"
-            />
-            {formErrors.name && (
-              <p className="text-sm text-red-500 mt-1" data-testid="recipe-name-error">
-                {formErrors.name}
-              </p>
-            )}
-          </div>
-
-          {/* DynamicFieldList for ingredients */}
-          <div data-testid="ingredients-section">
-            <DynamicFieldList
-              items={formData.ingredients}
-              setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, ingredients: newItems }))}
-              label="Składniki"
-              fieldPlaceholder="Wpisz składnik"
-              addButtonLabel="Dodaj składnik"
-              minItems={1}
-              maxItems={50}
-              maxCharsPerItem={200}
-              fieldType="input"
-              error={formErrors.ingredients}
-              data-testid="ingredients-dynamic-list"
-            />
-          </div>
-
-          {/* DynamicFieldList for steps */}
-          <div data-testid="steps-section">
-            <DynamicFieldList
-              items={formData.steps}
-              setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, steps: newItems }))}
-              label="Kroki przygotowania"
-              fieldPlaceholder="Opisz krok przygotowania"
-              addButtonLabel="Dodaj krok"
-              minItems={1}
-              maxItems={50}
-              maxCharsPerItem={2000}
-              fieldType="textarea"
-              textareaRows={3}
-              fieldLabel={(index: number) => `Krok ${index + 1}`}
-              error={formErrors.steps}
-              data-testid="steps-dynamic-list"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="preparation_time">Czas przygotowania</Label>
-            <Input
-              id="preparation_time"
-              name="preparation_time"
-              value={formData.preparation_time}
-              onChange={handleInputChange}
-              maxLength={100}
-              className={cn("mt-1", formErrors.preparation_time && "border-red-500")}
-              data-testid="preparation-time-input"
-            />
-            {formErrors.preparation_time && (
-              <p className="text-sm text-red-500 mt-1" data-testid="preparation-time-error">
-                {formErrors.preparation_time}
-              </p>
-            )}
-          </div>
-
-          {/* Source URL and Image URL might be conditionally displayed based on source_type or AI processing */}
-          {(formData.source_type === "url" || formData.image_url) && (
-            <div>
-              {formData.source_url && (
-                <div className="mb-4">
-                  <Label htmlFor="source_url">Źródło (URL)</Label>
-                  <Input
-                    id="source_url"
-                    name="source_url"
-                    value={formData.source_url}
-                    onChange={handleInputChange}
-                    readOnly={
-                      formData.source_type !== "url" || (formData.source_type === "url" && !!formData.extractionLogId)
-                    } // Readonly if not URL type or if already extracted from URL
-                    className={cn("mt-1 bg-gray-50", formErrors.source_url && "border-red-500")}
-                  />
-                  {formErrors.source_url && <p className="text-sm text-red-500 mt-1">{formErrors.source_url}</p>}
-                </div>
-              )}
-              {formData.image_url && (
-                <div>
-                  <Label>Obrazek</Label>
-                  <img
-                    src={formData.image_url}
-                    alt="Podgląd obrazka przepisu"
-                    className="mt-1 border rounded-md max-h-60 object-contain"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="notes">Notatki</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              rows={4}
-              maxLength={5000}
-              className={cn("mt-1", formErrors.notes && "border-red-500")}
-              data-testid="notes-textarea"
-            />
-            {formErrors.notes && (
-              <p className="text-sm text-red-500 mt-1" data-testid="notes-error">
-                {formErrors.notes}
-              </p>
-            )}
-          </div>
-
-          {/* MultiSelectTags */}
-          <div data-testid="tags-section">
-            <Label>Tagi</Label>
-            <MultiSelectTags
-              availableTags={availableTags}
-              selectedTagIds={formData.tag_ids}
-              setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
-              maxTags={10}
-              data-testid="tags-multi-select"
-            />
-            {formErrors.tag_ids && (
-              <p className="text-sm text-red-500 mt-1" data-testid="tags-error">
-                {formErrors.tag_ids}
-              </p>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Text Mode Tab */}
-        <TabsContent value="text" className="space-y-6 mt-6">
-          <div>
-            <Label htmlFor="rawTextToProcess">Wklej tekst przepisu</Label>
-            <Textarea
-              id="rawTextToProcess"
-              name="rawTextToProcess"
-              value={formData.rawTextToProcess || ""}
-              onChange={handleInputChange}
-              rows={8}
-              maxLength={10000}
-              placeholder="Wklej tutaj tekst przepisu, który chcesz przetworzyć..."
-              className={cn("mt-1", formErrors.rawTextToProcess && "border-red-500")}
-            />
-            <div className="flex justify-between text-sm text-gray-500 mt-1">
-              <span>
-                {formErrors.rawTextToProcess && <span className="text-red-500">{formErrors.rawTextToProcess}</span>}
-              </span>
-              <span>{(formData.rawTextToProcess || "").length}/10000</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              onClick={handleExtractFromText}
-              disabled={isExtracting || !formData.rawTextToProcess?.trim()}
-              className="flex items-center gap-2"
-            >
-              {isExtracting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Przetwarzanie...
-                </>
-              ) : (
-                "Przetwórz tekst"
-              )}
-            </Button>
-
-            {formData.originalRawText && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={toggleOriginalTextVisibility}
-                  className="flex items-center gap-2"
-                >
-                  {formData.isOriginalTextVisible ? (
-                    <>
-                      <EyeOff className="h-4 w-4" />
-                      Ukryj oryginalny tekst
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4" />
-                      Pokaż oryginalny tekst
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowReprocessDialog(true)}
-                  disabled={isExtracting}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Przetwórz ponownie
-                </Button>
-              </>
-            )}
-          </div>
-
-          {formData.isOriginalTextVisible && formData.originalRawText && (
-            <div>
-              <Label htmlFor="originalRawText">Oryginalny tekst</Label>
-              <Textarea
-                id="originalRawText"
-                value={formData.originalRawText}
-                onChange={(e) => setFormData((prev) => ({ ...prev, originalRawText: e.target.value }))}
-                rows={6}
-                className="mt-1 bg-gray-50"
-              />
-            </div>
-          )}
-
-          {formData.extractionLogId && (
-            <AiFeedbackButtons
-              extractionLogId={formData.extractionLogId}
-              currentFeedback={formData.aiFeedback}
-              onFeedbackSubmit={handleFeedbackSubmit}
-              className="mt-4"
-            />
-          )}
-
-          {/* Show extracted data in manual form fields */}
-          {formData.extractionLogId && (
-            <div className="space-y-6 border-t pt-6">
-              <h3 className="text-lg font-medium">Przetworzone dane</h3>
-
+        <TabsContent value="url" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Importuj przepis z linku</CardTitle>
+              <CardDescription>
+                Wklej link do strony z przepisem, a my spróbujemy go automatycznie zaimportować.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="name">Nazwa potrawy</Label>
+                <Label htmlFor="urlToImport">URL przepisu</Label>
                 <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
+                  id="urlToImport"
+                  name="urlToImport"
+                  type="url"
+                  value={formData.urlToImport || ""}
                   onChange={handleInputChange}
-                  maxLength={255}
-                  className={cn("mt-1", formErrors.name && "border-red-500")}
+                  placeholder="https://kwestiasmaku.com/..."
+                  className={cn("mt-1", formErrors.urlToImport && "border-destructive")}
                 />
-                {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
+                {formErrors.urlToImport && <p className="text-sm text-destructive mt-1">{formErrors.urlToImport}</p>}
+                <p className="text-sm text-muted-foreground mt-1">
+                  Obsługiwane domeny: aniagotuje.pl, kwestiasmaku.com
+                </p>
               </div>
-
-              <div>
-                <DynamicFieldList
-                  items={formData.ingredients}
-                  setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, ingredients: newItems }))}
-                  label="Składniki"
-                  fieldPlaceholder="Wpisz składnik"
-                  addButtonLabel="Dodaj składnik"
-                  minItems={1}
-                  maxItems={50}
-                  maxCharsPerItem={200}
-                  fieldType="input"
-                  error={formErrors.ingredients}
-                />
-              </div>
-
-              <div>
-                <DynamicFieldList
-                  items={formData.steps}
-                  setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, steps: newItems }))}
-                  label="Kroki przygotowania"
-                  fieldPlaceholder="Opisz krok przygotowania"
-                  addButtonLabel="Dodaj krok"
-                  minItems={1}
-                  maxItems={50}
-                  maxCharsPerItem={2000}
-                  fieldType="textarea"
-                  textareaRows={3}
-                  fieldLabel={(index: number) => `Krok ${index + 1}`}
-                  error={formErrors.steps}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="preparation_time">Czas przygotowania</Label>
-                <Input
-                  id="preparation_time"
-                  name="preparation_time"
-                  value={formData.preparation_time}
-                  onChange={handleInputChange}
-                  maxLength={100}
-                  className={cn("mt-1", formErrors.preparation_time && "border-red-500")}
-                />
-                {formErrors.preparation_time && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.preparation_time}</p>
+              <Button
+                type="button"
+                onClick={handleExtractFromUrl}
+                disabled={isExtracting || !formData.urlToImport?.trim()}
+                className="flex items-center gap-2"
+              >
+                {isExtracting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Importowanie...
+                  </>
+                ) : (
+                  "Importuj z URL"
                 )}
-              </div>
+              </Button>
+            </CardContent>
+          </Card>
 
-              <div>
-                <Label htmlFor="notes">Notatki</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={4}
-                  maxLength={5000}
-                  className={cn("mt-1", formErrors.notes && "border-red-500")}
-                />
-                {formErrors.notes && <p className="text-sm text-red-500 mt-1">{formErrors.notes}</p>}
-              </div>
-
-              <div>
-                <Label>Tagi</Label>
-                <MultiSelectTags
-                  availableTags={availableTags}
-                  selectedTagIds={formData.tag_ids}
-                  setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
-                  maxTags={10}
-                />
-                {formErrors.tag_ids && <p className="text-sm text-red-500 mt-1">{formErrors.tag_ids}</p>}
-              </div>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* URL Mode Tab */}
-        <TabsContent value="url" className="space-y-6 mt-6">
-          <div>
-            <Label htmlFor="urlToImport">URL przepisu</Label>
-            <Input
-              id="urlToImport"
-              name="urlToImport"
-              type="url"
-              value={formData.urlToImport || ""}
-              onChange={handleInputChange}
-              placeholder="https://aniagotuje.pl/przepis/nazwa-przepisu"
-              className={cn("mt-1", formErrors.urlToImport && "border-red-500")}
-            />
-            {formErrors.urlToImport && <p className="text-sm text-red-500 mt-1">{formErrors.urlToImport}</p>}
-            <p className="text-sm text-gray-500 mt-1">Obsługiwane domeny: aniagotuje.pl, kwestiasmaku.com</p>
-          </div>
-
-          <div>
-            <Button
-              type="button"
-              onClick={handleExtractFromUrl}
-              disabled={isExtracting || !formData.urlToImport?.trim()}
-              className="flex items-center gap-2"
-            >
-              {isExtracting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Importowanie...
-                </>
-              ) : (
-                "Importuj z URL"
-              )}
-            </Button>
-          </div>
-
-          {formData.extractionLogId && (
-            <AiFeedbackButtons
-              extractionLogId={formData.extractionLogId}
-              currentFeedback={formData.aiFeedback}
-              onFeedbackSubmit={handleFeedbackSubmit}
-              className="mt-4"
-            />
-          )}
-
-          {/* Show extracted data in manual form fields */}
           {formData.extractionLogId && (
             <div className="space-y-6 border-t pt-6">
               <h3 className="text-lg font-medium">Zaimportowane dane</h3>
-
-              <div>
-                <Label htmlFor="name">Nazwa potrawy</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  maxLength={255}
-                  className={cn("mt-1", formErrors.name && "border-red-500")}
-                />
-                {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
-              </div>
-
-              <div>
-                <DynamicFieldList
-                  items={formData.ingredients}
-                  setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, ingredients: newItems }))}
-                  label="Składniki"
-                  fieldPlaceholder="Wpisz składnik"
-                  addButtonLabel="Dodaj składnik"
-                  minItems={1}
-                  maxItems={50}
-                  maxCharsPerItem={200}
-                  fieldType="input"
-                  error={formErrors.ingredients}
-                />
-              </div>
-
-              <div>
-                <DynamicFieldList
-                  items={formData.steps}
-                  setItems={(newItems: string[]) => setFormData((prev) => ({ ...prev, steps: newItems }))}
-                  label="Kroki przygotowania"
-                  fieldPlaceholder="Opisz krok przygotowania"
-                  addButtonLabel="Dodaj krok"
-                  minItems={1}
-                  maxItems={50}
-                  maxCharsPerItem={2000}
-                  fieldType="textarea"
-                  textareaRows={3}
-                  fieldLabel={(index: number) => `Krok ${index + 1}`}
-                  error={formErrors.steps}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="preparation_time">Czas przygotowania</Label>
-                <Input
-                  id="preparation_time"
-                  name="preparation_time"
-                  value={formData.preparation_time}
-                  onChange={handleInputChange}
-                  maxLength={100}
-                  className={cn("mt-1", formErrors.preparation_time && "border-red-500")}
-                />
-                {formErrors.preparation_time && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.preparation_time}</p>
-                )}
-              </div>
-
-              {formData.source_url && (
-                <div>
-                  <Label htmlFor="source_url">Źródło (URL)</Label>
-                  <Input
-                    id="source_url"
-                    name="source_url"
-                    value={formData.source_url}
-                    onChange={handleInputChange}
-                    readOnly
-                    className="mt-1 bg-gray-50"
-                  />
-                </div>
-              )}
-
-              {formData.image_url && (
-                <div>
-                  <Label>Obrazek</Label>
-                  <img
-                    src={formData.image_url}
-                    alt="Podgląd obrazka przepisu"
-                    className="mt-1 border rounded-md max-h-60 object-contain"
-                  />
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="notes">Notatki</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={4}
-                  maxLength={5000}
-                  className={cn("mt-1", formErrors.notes && "border-red-500")}
-                />
-                {formErrors.notes && <p className="text-sm text-red-500 mt-1">{formErrors.notes}</p>}
-              </div>
-
-              <div>
-                <Label>Tagi</Label>
-                <MultiSelectTags
-                  availableTags={availableTags}
-                  selectedTagIds={formData.tag_ids}
-                  setSelectedTagIds={(ids) => setFormData((prev) => ({ ...prev, tag_ids: ids }))}
-                  maxTags={10}
-                />
-                {formErrors.tag_ids && <p className="text-sm text-red-500 mt-1">{formErrors.tag_ids}</p>}
-              </div>
+              <AiFeedbackButtons
+                extractionLogId={formData.extractionLogId}
+                currentFeedback={formData.aiFeedback}
+                onFeedbackSubmit={handleFeedbackSubmit}
+              />
+              <RecipeFormFields {...{ formData, formErrors, handleInputChange, setFormData, availableTags }} />
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="text" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Importuj przepis z tekstu</CardTitle>
+              <CardDescription>
+                Wklej skopiowany tekst przepisu, a my spróbujemy go automatycznie przetworzyć.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="rawTextToProcess">Wklej tekst przepisu</Label>
+                <Textarea
+                  id="rawTextToProcess"
+                  name="rawTextToProcess"
+                  value={formData.rawTextToProcess || ""}
+                  onChange={handleInputChange}
+                  rows={8}
+                  maxLength={10000}
+                  placeholder="Wklej tutaj tekst przepisu..."
+                  className={cn("mt-1", formErrors.rawTextToProcess && "border-destructive")}
+                />
+                <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                  <span>
+                    {formErrors.rawTextToProcess && (
+                      <span className="text-destructive">{formErrors.rawTextToProcess}</span>
+                    )}
+                  </span>
+                  <span>{(formData.rawTextToProcess || "").length}/10000</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={handleExtractFromText}
+                  disabled={isExtracting || !formData.rawTextToProcess?.trim()}
+                  className="flex items-center gap-2"
+                >
+                  {isExtracting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Przetwarzanie...
+                    </>
+                  ) : (
+                    "Przetwórz tekst"
+                  )}
+                </Button>
+                {formData.originalRawText && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={toggleOriginalTextVisibility}
+                      className="flex items-center gap-2"
+                    >
+                      {formData.isOriginalTextVisible ? (
+                        <>
+                          <EyeOff className="h-4 w-4" /> Ukryj oryginał
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4" /> Pokaż oryginał
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowReprocessDialog(true)}
+                      disabled={isExtracting}
+                      className="flex items-center gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" /> Przetwórz ponownie
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {formData.isOriginalTextVisible && formData.originalRawText && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Oryginalny tekst</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  id="originalRawText"
+                  value={formData.originalRawText}
+                  readOnly
+                  rows={8}
+                  className="mt-1 bg-muted"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.extractionLogId && (
+            <div className="space-y-6 border-t pt-6">
+              <h3 className="text-lg font-medium">Przetworzone dane</h3>
+              <AiFeedbackButtons
+                extractionLogId={formData.extractionLogId}
+                currentFeedback={formData.aiFeedback}
+                onFeedbackSubmit={handleFeedbackSubmit}
+              />
+              <RecipeFormFields {...{ formData, formErrors, handleInputChange, setFormData, availableTags }} />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="manual" className="mt-6">
+          <RecipeFormFields {...{ formData, formErrors, handleInputChange, setFormData, availableTags }} />
         </TabsContent>
       </Tabs>
 
       {formErrors.api && (
-        <div data-error="api" className="rounded-md bg-red-50 p-4" data-testid="api-error">
-          <p className="text-sm text-red-700">{formErrors.api}</p>
+        <div data-error="api" className="rounded-md bg-destructive/10 p-4 border border-destructive/20">
+          <p className="text-sm font-medium text-destructive">{formErrors.api}</p>
         </div>
       )}
 
-      <Button type="submit" disabled={isLoading} className="w-full sm:w-auto" data-testid="submit-button">
-        {isLoading ? "Zapisywanie..." : mode === "edit" ? "Zapisz zmiany" : "Zapisz przepis"}
-      </Button>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
+          {isLoading ? "Zapisywanie..." : mode === "edit" ? "Zapisz zmiany" : "Zapisz przepis"}
+        </Button>
+      </div>
 
-      {/* Dialog for reprocessing confirmation */}
       <Dialog open={showReprocessDialog} onOpenChange={setShowReprocessDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Potwierdzenie ponownego przetwarzania
+              Potwierdzenie
             </DialogTitle>
             <DialogDescription>
-              Ponowne przetworzenie tekstu spowoduje nadpisanie aktualnie wprowadzonych danych w formularzu. Czy na
-              pewno chcesz kontynuować?
+              Ponowne przetworzenie tekstu nadpisze wprowadzone zmiany. Czy na pewno chcesz kontynuować?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowReprocessDialog(false)}>
               Anuluj
             </Button>
-            <Button onClick={handleReprocessText} className="bg-amber-600 hover:bg-amber-700">
-              Tak, przetwórz ponownie
-            </Button>
+            <Button onClick={handleReprocessText}>Tak, przetwórz ponownie</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

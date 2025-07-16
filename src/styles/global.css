@@ -5,71 +5,210 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+
+  /* === NOWA PALETA KOLORYSTYCZNA - INSPIROWANA SKŁADNIKAMI KUCHENNYMI === */
+
+  /* Główne kolory - ciepłe, naturalne */
+  --primary: oklch(0.65 0.15 25);
+  /* Warm Terracotta */
+  --primary-foreground: oklch(0.98 0.008 45);
+  /* Warm White */
+  --primary-dark: oklch(0.55 0.18 25);
+  /* Deeper Terracotta */
+
+  /* Akcent - złoty szafran */
+  --accent: oklch(0.75 0.20 65);
+  /* Golden Saffron */
+  --accent-foreground: oklch(0.08 0.015 25);
+  /* Dark for contrast */
+  --accent-light: oklch(0.85 0.12 65);
+  /* Light Saffron */
+
+  /* Kolory pomocnicze */
+  --success: oklch(0.70 0.15 140);
+  /* Fresh Basil Green */
+  --warning: oklch(0.80 0.15 85);
+  /* Turmeric Yellow */
+  --destructive: oklch(0.65 0.20 15);
+  /* Paprika Red */
+
+  /* Neutrals - ciepłe szarości */
+  --background: oklch(0.98 0.008 45);
+  /* Warm White */
+  --foreground: oklch(0.15 0.015 25);
+  /* Dark Brown */
+  --surface: oklch(0.96 0.012 45);
+  /* Cream */
+  --muted: oklch(0.92 0.015 45);
+  /* Light Warm Gray */
+  --muted-foreground: oklch(0.45 0.025 25);
+  /* Medium Warm Gray */
+
+  /* Card & Popover */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  /* Pure White */
+  --card-foreground: oklch(0.15 0.015 25);
+  /* Dark Brown */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Pure White */
+  --popover-foreground: oklch(0.15 0.015 25);
+  /* Dark Brown */
+
+  /* Secondary */
+  --secondary: oklch(0.94 0.02 45);
+  /* Light Warm */
+  --secondary-foreground: oklch(0.25 0.02 25);
+  /* Medium Brown */
+
+  /* Borders & Inputs */
+  --border: oklch(0.9 0.015 45);
+  /* Light Warm Border */
+  --input: oklch(0.9 0.015 45);
+  /* Light Warm Border */
+  --ring: oklch(0.65 0.15 25);
+  /* Primary Ring */
+
+  /* Charts */
+  --chart-1: oklch(0.65 0.15 25);
+  /* Terracotta */
+  --chart-2: oklch(0.75 0.20 65);
+  /* Golden */
+  --chart-3: oklch(0.70 0.15 140);
+  /* Basil */
+  --chart-4: oklch(0.80 0.15 85);
+  /* Turmeric */
+  --chart-5: oklch(0.65 0.20 15);
+  /* Paprika */
+
+  /* Sidebar */
+  --sidebar: oklch(0.96 0.012 45);
+  /* Cream */
+  --sidebar-foreground: oklch(0.15 0.015 25);
+  /* Dark Brown */
+  --sidebar-primary: oklch(0.65 0.15 25);
+  /* Terracotta */
+  --sidebar-primary-foreground: oklch(0.98 0.008 45);
+  /* Warm White */
+  --sidebar-accent: oklch(0.92 0.015 45);
+  /* Light Warm Gray */
+  --sidebar-accent-foreground: oklch(0.25 0.02 25);
+  /* Medium Brown */
+  --sidebar-border: oklch(0.9 0.015 45);
+  /* Light Warm Border */
+  --sidebar-ring: oklch(0.65 0.15 25);
+  /* Terracotta Ring */
+
+  /* === SPACING SYSTEM === */
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-12: 3rem;
+  /* 48px */
+  --space-16: 4rem;
+  /* 64px */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* === ENHANCED DARK THEME - KULINARNY === */
+
+  /* Główne kolory z lepszym kontrastem */
+  --primary: oklch(0.75 0.20 25);
+  /* Brighter Warm Terracotta */
+  --primary-foreground: oklch(0.05 0.015 25);
+  /* Dark Chocolate */
+  --primary-dark: oklch(0.65 0.22 25);
+  /* Deeper Terracotta */
+
+  /* Akcent z enhanced glow */
+  --accent: oklch(0.85 0.24 65);
+  /* Bright Golden */
+  --accent-foreground: oklch(0.05 0.015 25);
+  /* Dark Chocolate */
+  --accent-light: oklch(0.80 0.20 65);
+  /* Medium Golden */
+
+  /* Kolory pomocnicze z lepszą widocznością */
+  --success: oklch(0.80 0.20 140);
+  /* Bright Basil */
+  --warning: oklch(0.90 0.20 85);
+  /* Bright Turmeric */
+  --destructive: oklch(0.75 0.24 15);
+  /* Bright Paprika */
+
+  /* Enhanced neutrals - lepszy kontrast */
+  --background: oklch(0.06 0.015 25);
+  /* Deeper Dark Chocolate */
+  --foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+  --surface: oklch(0.10 0.018 25);
+  /* Enhanced Rich Brown */
+  --muted: oklch(0.18 0.025 25);
+  /* Better Dark Warm Gray */
+  --muted-foreground: oklch(0.70 0.02 45);
+  /* Enhanced Light Warm Gray */
+
+  /* Card & Popover z lepszymi cieniami */
+  --card: oklch(0.10 0.018 25);
+  /* Enhanced Rich Brown */
+  --card-foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+  --popover: oklch(0.08 0.020 25);
+  /* Darker for better layering */
+  --popover-foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+
+  /* Secondary z enhanced contrast */
+  --secondary: oklch(0.16 0.025 25);
+  /* Enhanced Dark Warm */
+  --secondary-foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+
+  /* Borders & Inputs z lepszą widocznością */
+  --border: oklch(0.22 0.025 25);
+  /* Enhanced Dark Warm Border */
+  --input: oklch(0.22 0.025 25);
+  /* Enhanced Dark Warm Border */
+  --ring: oklch(0.75 0.20 25);
+  /* Brighter Primary Ring */
+
+  /* Charts - enhanced dark theme */
+  --chart-1: oklch(0.75 0.20 25);
+  /* Brighter Terracotta */
+  --chart-2: oklch(0.85 0.24 65);
+  /* Brighter Golden */
+  --chart-3: oklch(0.80 0.20 140);
+  /* Brighter Basil */
+  --chart-4: oklch(0.90 0.20 85);
+  /* Brighter Turmeric */
+  --chart-5: oklch(0.75 0.24 15);
+  /* Brighter Paprika */
+
+  /* Sidebar - enhanced dark */
+  --sidebar: oklch(0.10 0.018 25);
+  /* Enhanced Rich Brown */
+  --sidebar-foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+  --sidebar-primary: oklch(0.75 0.20 25);
+  /* Brighter Terracotta */
+  --sidebar-primary-foreground: oklch(0.05 0.015 25);
+  /* Dark Chocolate */
+  --sidebar-accent: oklch(0.16 0.025 25);
+  /* Enhanced Dark Warm */
+  --sidebar-accent-foreground: oklch(0.97 0.008 45);
+  /* Brighter Warm Light */
+  --sidebar-border: oklch(0.22 0.025 25);
+  /* Enhanced Dark Warm Border */
+  --sidebar-ring: oklch(0.75 0.20 25);
+  /* Brighter Terracotta Ring */
 }
 
 @theme inline {
@@ -113,10 +252,114 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Smooth transitions for dark mode switching */
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Lato", sans-serif;
+    /* Enhanced readability */
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    /* Smooth color transitions */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* === ENHANCED TYPOGRAPHY SYSTEM === */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    /* Smooth color transitions for headings */
+    transition: color 0.3s ease;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  h2 {
+    font-size: 2rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  h5 {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+  }
+
+  h6 {
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+
+  /* === ENHANCED DARK MODE SHADOWS & GLOWS === */
+  .dark {
+
+    /* Enhanced card shadows for dark mode */
+    .shadow-xs {
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    .shadow-sm {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+
+    .shadow-md {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+    }
+
+    .shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+    }
+
+    .shadow-xl {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+    }
+
+    .shadow-2xl {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Enhanced glow effects for dark mode */
+    .hover\:shadow-primary\/25:hover {
+      box-shadow: 0 10px 15px -3px rgba(var(--primary), 0.4), 0 4px 6px -4px rgba(var(--primary), 0.4);
+    }
+
+    .hover\:shadow-destructive\/25:hover {
+      box-shadow: 0 10px 15px -3px rgba(var(--destructive), 0.4), 0 4px 6px -4px rgba(var(--destructive), 0.4);
+    }
+
+    /* Enhanced backdrop blur for dark mode */
+    .backdrop-blur-sm {
+      backdrop-filter: blur(4px) saturate(1.2);
+    }
+
+    .backdrop-blur-md {
+      backdrop-filter: blur(12px) saturate(1.2);
+    }
+
+    .backdrop-blur-xl {
+      backdrop-filter: blur(24px) saturate(1.2);
+    }
   }
 }
 
@@ -126,5 +369,199 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* === SHIMMER ANIMATION FOR LOADING STATES === */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg,
+        var(--muted) 0%,
+        rgba(from var(--muted-foreground) r g b / 0.1) 50%,
+        var(--muted) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* === GLASSMORPHISM UTILITIES === */
+  .glass {
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-dark {
+    backdrop-filter: blur(16px);
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  /* === TRANSFORM GPU ACCELERATION === */
+  .transform-gpu {
+    transform: translateZ(0);
+  }
+
+  /* === CUSTOM FOCUS STYLES === */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  /* === MOBILE NAVIGATION SUPPORT === */
+  .safe-area-pb {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  /* Mobile content spacing for bottom navigation */
+  @media (max-width: 1023px) {
+    .mobile-content-spacing {
+      padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* === ADVANCED ANIMATIONS === */
+
+  /* Staggered animations for recipe cards */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+
+  /* Staggered delay classes */
+  .stagger-1 {
+    animation-delay: 0.1s;
+  }
+
+  .stagger-2 {
+    animation-delay: 0.2s;
+  }
+
+  .stagger-3 {
+    animation-delay: 0.3s;
+  }
+
+  .stagger-4 {
+    animation-delay: 0.4s;
+  }
+
+  .stagger-5 {
+    animation-delay: 0.5s;
+  }
+
+  .stagger-6 {
+    animation-delay: 0.6s;
+  }
+
+  /* Page transition animations */
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-page-enter {
+    animation: page-enter 0.4s ease-out;
+  }
+
+  /* Bounce micro-interactions */
+  @keyframes gentle-bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  .animate-gentle-bounce {
+    animation: gentle-bounce 0.6s ease-in-out;
+  }
+
+  /* Pulse glow effect */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 var(--primary);
+    }
+
+    50% {
+      box-shadow: 0 0 20px 5px rgba(var(--primary), 0.15);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Slide in from different directions */
+  @keyframes slide-in-from-right {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-from-right 0.5s ease-out;
+  }
+
+  /* Scale in animation */
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+  }
+
+  /* Rotation micro-interaction */
+  .animate-rotate-gently {
+    transition: transform 0.3s ease;
+  }
+
+  .animate-rotate-gently:hover {
+    transform: rotate(5deg);
   }
 }

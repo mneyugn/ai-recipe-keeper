@@ -7,18 +7,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import type { TagDTO } from "@/types";
 
-// Predefiniowane kolory dla tagów
+// Predefiniowane kolory dla tagów - zgodne z design systemem
 const TAG_COLORS = [
-  "bg-red-100 text-red-800 hover:bg-red-200",
-  "bg-blue-100 text-blue-800 hover:bg-blue-200",
-  "bg-green-100 text-green-800 hover:bg-green-200",
-  "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-  "bg-purple-100 text-purple-800 hover:bg-purple-200",
-  "bg-pink-100 text-pink-800 hover:bg-pink-200",
-  "bg-indigo-100 text-indigo-800 hover:bg-indigo-200",
-  "bg-orange-100 text-orange-800 hover:bg-orange-200",
-  "bg-teal-100 text-teal-800 hover:bg-teal-200",
-  "bg-cyan-100 text-cyan-800 hover:bg-cyan-200",
+  "bg-primary/10 text-primary hover:bg-primary/15 border-primary/20",
+  "bg-accent/10 text-accent hover:bg-accent/15 border-accent/20",
+  "bg-success/10 text-success hover:bg-success/15 border-success/20",
+  "bg-warning/10 text-warning hover:bg-warning/15 border-warning/20",
+  "bg-destructive/10 text-destructive hover:bg-destructive/15 border-destructive/20",
+  "bg-secondary/50 text-secondary-foreground hover:bg-secondary/70 border-secondary/30",
+  "bg-muted/70 text-muted-foreground hover:bg-muted border-muted/50",
+  "bg-primary/20 text-primary hover:bg-primary/25 border-primary/30",
+  "bg-accent/20 text-accent hover:bg-accent/25 border-accent/30",
+  "bg-success/20 text-success hover:bg-success/25 border-success/30",
 ];
 
 // Funkcja do przypisywania koloru na podstawie ID tagu
@@ -102,7 +102,9 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
                   >
                     {selectedTagIds.includes(tag.id) && <Check className="h-3 w-3" />}
                   </div>
-                  <span className={cn("px-2 py-0.5 rounded-md text-sm", getTagColor(tag.id))}>{tag.name}</span>
+                  <span className={cn("px-2 py-0.5 rounded-md text-sm border transition-colors", getTagColor(tag.id))}>
+                    {tag.name}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -116,7 +118,7 @@ const MultiSelectTags: React.FC<MultiSelectTagsProps> = ({
             <Badge
               key={tag.id}
               variant="secondary"
-              className={cn("cursor-pointer transition-colors", getTagColor(tag.id))}
+              className={cn("cursor-pointer transition-colors border", getTagColor(tag.id))}
               onClick={() => toggleTag(tag.id)}
               data-testid={`${testId}-selected-tag-${tag.slug}`}
             >

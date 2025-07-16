@@ -44,11 +44,11 @@ if (recipeId) {
 
 <AppLayout title={recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}>
   <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-bold mb-6">
+    <h1 class="text-3xl font-bold mb-6 text-foreground">
       {recipeData ? `Edytuj przepis: ${recipeData.name}` : `Edytuj przepis ${recipeId}`}
     </h1>
     {/* Basic rendering for now - will add conditionals back */}
     <RecipeForm client:load mode="edit" recipeId={recipeId} recipeData={recipeData} />
-    {error && <p class="text-red-500">{error}</p>}
+    {error && <p class="text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">{error}</p>}
   </div>
 </AppLayout>

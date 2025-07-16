@@ -1,24 +1,21 @@
 import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AuthErrorAlert } from "./AuthErrorAlert";
-import { CheckCircle, Mail } from "lucide-react";
 
 interface ResetRequestFormProps {
   className?: string;
 }
 
-interface ResetRequestFormData {
+type ResetRequestFormData = {
   email: string;
-}
+};
 
-interface FormErrors {
+type FormErrors = {
   email?: string;
-}
+};
 
 export function ResetRequestForm({ className }: ResetRequestFormProps) {
   const [formData, setFormData] = useState<ResetRequestFormData>({
@@ -87,35 +84,26 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
     }
   };
 
-  // Wyświetl komunikat sukcesu
+  // Jeśli reset się powiódł, pokaż komunikat sukcesu
   if (isSuccess) {
     return (
       <Card className={className} data-testid="reset-request-success">
         <CardHeader className="text-center">
-          <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-          <CardTitle className="text-2xl text-green-700">Link wysłany!</CardTitle>
-          <CardDescription>Sprawdź swoją skrzynkę odbiorczą</CardDescription>
+          <CardTitle className="text-2xl text-primary">Email wysłany!</CardTitle>
+          <CardDescription>
+            Sprawdź swoją skrzynkę pocztową. Wysłaliśmy link do resetowania hasła na adres {formData.email}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Alert data-testid="reset-request-success-alert">
-            <Mail className="h-4 w-4" />
-            <AlertDescription>
-              Wysłaliśmy link do resetowania hasła na adres <strong>{formData.email}</strong>. Sprawdź również folder ze
-              spamem, jeśli nie widzisz wiadomości w skrzynce odbiorczej.
-            </AlertDescription>
-          </Alert>
-
-          <div className="mt-6 text-center space-y-2">
-            <Button variant="outline" asChild className="w-full" data-testid="reset-request-back-to-login">
+        <CardContent className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Nie otrzymałeś wiadomości? Sprawdź folder spam lub spróbuj ponownie za kilka minut.
+          </p>
+          <Button variant="outline" onClick={() => setIsSuccess(false)} className="w-full">
+            Spróbuj ponownie
+          </Button>
+          <div className="mt-4">
+            <Button variant="link" asChild className="p-0 h-auto">
               <a href="/auth/login">Powrót do logowania</a>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setIsSuccess(false)}
-              className="w-full"
-              data-testid="reset-request-send-again"
-            >
-              Wyślij link ponownie
             </Button>
           </div>
         </CardContent>
@@ -132,32 +120,24 @@ export function ResetRequestForm({ className }: ResetRequestFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4" data-testid="reset-request-form-element" noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="nazwa@przykład.pl"
-              value={formData.email}
-              onChange={handleChange}
-              aria-invalid={!!errors.email}
-              disabled={isLoading}
-              data-testid="reset-request-email-input"
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive" data-testid="reset-request-email-error">
-                {errors.email}
-              </p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="reset-request-form-element" noValidate>
+          <FloatingInput
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            disabled={isLoading}
+            data-testid="reset-request-email-input"
+            helperText="Adres email używany do rejestracji"
+          />
 
           <Button type="submit" className="w-full" disabled={isLoading} data-testid="reset-request-submit-button">
             {isLoading ? "Wysyłanie..." : "Wyślij link do resetowania"}
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Pamiętasz hasło?{" "}
             <Button variant="link" asChild className="p-0 h-auto" data-testid="reset-request-login-link">

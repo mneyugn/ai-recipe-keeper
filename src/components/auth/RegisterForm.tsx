@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FloatingInput } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
 import { authService } from "@/lib/services/auth.service";
@@ -111,70 +110,46 @@ export function RegisterForm({ className }: RegisterFormProps) {
       <CardContent>
         <AuthErrorAlert error={globalError} className="mb-4" />
 
-        <form onSubmit={handleSubmit} className="space-y-4" data-testid="register-form-element" noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="nazwa@przykład.pl"
-              value={formData.email}
-              onChange={handleChange("email")}
-              aria-invalid={!!errors.email}
-              disabled={isLoading}
-              data-testid="register-email-input"
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive" data-testid="register-email-error">
-                {errors.email}
-              </p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="register-form-element" noValidate>
+          <FloatingInput
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange("email")}
+            error={errors.email}
+            disabled={isLoading}
+            data-testid="register-email-input"
+            helperText="Wprowadź swój adres email"
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Hasło</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Co najmniej 8 znaków"
-              value={formData.password}
-              onChange={handleChange("password")}
-              aria-invalid={!!errors.password}
-              disabled={isLoading}
-              data-testid="register-password-input"
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive" data-testid="register-password-error">
-                {errors.password}
-              </p>
-            )}
-          </div>
+          <FloatingInput
+            type="password"
+            label="Hasło"
+            value={formData.password}
+            onChange={handleChange("password")}
+            error={errors.password}
+            disabled={isLoading}
+            data-testid="register-password-input"
+            helperText="Co najmniej 8 znaków"
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Potwierdź hasło</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Wprowadź hasło ponownie"
-              value={formData.confirmPassword}
-              onChange={handleChange("confirmPassword")}
-              aria-invalid={!!errors.confirmPassword}
-              disabled={isLoading}
-              data-testid="register-confirm-password-input"
-            />
-            {errors.confirmPassword && (
-              <p className="text-sm text-destructive" data-testid="register-confirm-password-error">
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
+          <FloatingInput
+            type="password"
+            label="Potwierdź hasło"
+            value={formData.confirmPassword}
+            onChange={handleChange("confirmPassword")}
+            error={errors.confirmPassword}
+            disabled={isLoading}
+            data-testid="register-confirm-password-input"
+            helperText="Wprowadź hasło ponownie"
+          />
 
           <Button type="submit" className="w-full" disabled={isLoading} data-testid="register-submit-button">
             {isLoading ? "Tworzenie konta..." : "Załóż konto"}
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Masz już konto?{" "}
             <Button variant="link" asChild className="p-0 h-auto" data-testid="register-login-link">

@@ -45,12 +45,12 @@ try {
 
 <AppLayout title={recipe?.name ? `${recipe.name} - AI RecipeKeeper` : "Przepis - AI RecipeKeeper"}>
   {/* Nagłówek z nawigacją */}
-  <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 -mx-4 lg:-mx-6">
+  <header class="bg-surface border-b border-border -mx-4 lg:-mx-6">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <nav class="flex items-center justify-between">
         <a
           href="/recipes"
-          class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          class="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -62,7 +62,7 @@ try {
           recipe && (
             <a
               href={`/recipes/${recipe.id}/edit`}
-              class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              class="inline-flex items-center px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary-dark rounded-md transition-colors shadow-sm hover:shadow-md"
             >
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -83,24 +83,24 @@ try {
   <main class="max-w-4xl mx-auto py-8">
     {
       error ? (
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+        <div class="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
           <div class="flex items-center">
-            <svg class="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-5 h-5 text-destructive mr-3" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fill-rule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
                 clip-rule="evenodd"
               />
             </svg>
-            <h3 class="text-lg font-medium text-red-800 dark:text-red-200">Błąd</h3>
+            <h3 class="text-lg font-medium text-destructive">Błąd</h3>
           </div>
-          <p class="mt-2 text-red-700 dark:text-red-300">{error}</p>
+          <p class="mt-2 text-destructive/80">{error}</p>
         </div>
       ) : recipe ? (
-        <article class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <article class="bg-card/95 backdrop-blur-sm rounded-xl shadow-lg border border-border/50 overflow-hidden">
           {/* Zdjęcie przepisu */}
           {recipe.image_url && (
-            <div class="aspect-w-16 aspect-h-9 bg-gray-200 dark:bg-gray-700">
+            <div class="aspect-w-16 aspect-h-9 bg-muted">
               <img src={recipe.image_url} alt={recipe.name} class="w-full h-64 object-cover" loading="lazy" />
             </div>
           )}
@@ -108,10 +108,10 @@ try {
           <div class="p-6 sm:p-8">
             {/* Nagłówek przepisu */}
             <header class="mb-6">
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">{recipe.name}</h1>
+              <h1 class="text-3xl font-bold text-foreground mb-4">{recipe.name}</h1>
 
               {/* Metadane */}
-              <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {recipe.preparation_time && (
                   <div class="flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,7 +144,7 @@ try {
                 <div class="mt-4">
                   <div class="flex flex-wrap gap-2">
                     {recipe.tags.map((tag) => (
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors">
                         {tag.name}
                       </span>
                     ))}
@@ -155,11 +155,11 @@ try {
 
             {/* Składniki */}
             <section class="mb-8">
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Składniki</h2>
-              <ul class="space-y-2">
+              <h2 class="text-xl font-semibold text-foreground mb-4">Składniki</h2>
+              <ul class="space-y-3">
                 {recipe.ingredients.map((ingredient) => (
-                  <li class="flex items-start text-gray-700 dark:text-gray-300">
-                    <span class="inline-block w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0" />
+                  <li class="flex items-start text-card-foreground">
+                    <span class="inline-block w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0" />
                     {ingredient}
                   </li>
                 ))}
@@ -168,11 +168,11 @@ try {
 
             {/* Kroki przygotowania */}
             <section class="mb-8">
-              <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Sposób przygotowania</h2>
+              <h2 class="text-xl font-semibold text-foreground mb-4">Sposób przygotowania</h2>
               <ol class="space-y-4">
                 {recipe.steps.map((step, index) => (
-                  <li class="flex items-start text-gray-700 dark:text-gray-300">
-                    <span class="inline-flex items-center justify-center w-6 h-6 bg-blue-500 text-white text-sm font-medium rounded-full mr-4 flex-shrink-0 mt-0.5">
+                  <li class="flex items-start text-card-foreground">
+                    <span class="inline-flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground text-sm font-medium rounded-full mr-4 flex-shrink-0 mt-0.5">
                       {index + 1}
                     </span>
                     <div class="flex-1">{step}</div>
@@ -184,9 +184,9 @@ try {
             {/* Notatki */}
             {recipe.notes && (
               <section class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Notatki</h2>
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                  <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{recipe.notes}</p>
+                <h2 class="text-xl font-semibold text-foreground mb-4">Notatki</h2>
+                <div class="bg-warning/10 border border-warning/20 rounded-xl p-4">
+                  <p class="text-card-foreground whitespace-pre-wrap">{recipe.notes}</p>
                 </div>
               </section>
             )}
@@ -194,12 +194,12 @@ try {
             {/* Źródło */}
             {recipe.source_url && (
               <section>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Źródło</h2>
+                <h2 class="text-xl font-semibold text-foreground mb-4">Źródło</h2>
                 <a
                   href={recipe.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                  class="inline-flex items-center text-accent hover:text-accent-light transition-colors underline decoration-accent/30 hover:decoration-accent/60"
                 >
                   {recipe.source_url}
                   <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,10 +216,10 @@ try {
           </div>
         </article>
       ) : (
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-          <div class="animate-pulse">
-            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/4 mx-auto mb-4" />
-            <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mx-auto" />
+        <div class="bg-card/95 backdrop-blur-sm rounded-xl shadow-lg border border-border/50 p-8 text-center">
+          <div class="animate-shimmer">
+            <div class="h-4 bg-muted rounded w-1/4 mx-auto mb-4" />
+            <div class="h-4 bg-muted rounded w-1/2 mx-auto" />
           </div>
         </div>
       )

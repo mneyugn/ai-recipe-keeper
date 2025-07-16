@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import type { RecipeListQueryParams } from "../types";
 import RecipeCard from "./RecipeCard";
+import RecipeCardSkeleton from "./RecipeCardSkeleton";
 import SortSelector from "./SortSelector";
 import TagFilter from "./TagFilter";
 import { useRecipeList } from "./hooks/useRecipeList";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useTags } from "./hooks/useTags";
+import { Button } from "@/components/ui/button";
 
 interface RecipeListContainerProps {
   initialParams: RecipeListQueryParams;
@@ -13,23 +15,14 @@ interface RecipeListContainerProps {
 }
 
 const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams, userId }) => {
-  // Hook do pobierania tagów
   const { tags: availableTags, isLoading: isLoadingTags, error: tagsError } = useTags();
 
-  // Utility funkcje do konwersji między tag slug a ID
   const tagSlugToId = useMemo(() => {
     const map = new Map<string, string>();
     availableTags.forEach((tag) => map.set(tag.slug, tag.id));
     return map;
   }, [availableTags]);
 
-  // const tagIdToSlug = useMemo(() => {
-  //   const map = new Map<string, string>();
-  //   availableTags.forEach((tag) => map.set(tag.id, tag.slug));
-  //   return map;
-  // }, [availableTags]);
-
-  // Konwersja inicjalnych parametrów ze slug na ID
   const initialSelectedTagIds = useMemo(() => {
     if (!initialParams.tag) return [];
     return initialParams.tag
@@ -38,7 +31,6 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
       .filter(Boolean) as string[];
   }, [initialParams.tag, tagSlugToId]);
 
-  // Użycie custom hook'a do zarządzania stanem z konwertowanymi ID
   const modifiedInitialParams = useMemo(
     () => ({
       ...initialParams,
@@ -52,126 +44,151 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
     userId,
   });
 
-  // Infinite scroll hook
   const sentryRef = useInfiniteScroll({
     loadMore: actions.loadMore,
     hasMore: state.hasNextPage,
     isLoading: state.isLoadingMore,
   });
 
-  // Renderowanie
-  return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header sekcja */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Moje Przepisy</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {state.isLoading
-                ? "Ładowanie..."
-                : `${state.pagination.total} ${
-                    state.pagination.total === 1 ? "przepis" : state.pagination.total <= 4 ? "przepisy" : "przepisów"
-                  }`}
-            </p>
+  const handleRecipeClick = (recipeId: string) => {
+    actions.navigateToRecipe(recipeId);
+  };
+
+  // Enhanced error state z animations
+  if (state.error) {
+    return (
+      <div className="text-center py-12 animate-page-enter">
+        <div className="max-w-md mx-auto">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-gentle-bounce">
+            <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
           </div>
-          <button
-            onClick={() => (window.location.href = "/recipes/new")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            Dodaj nowy przepis
-          </button>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Wystąpił błąd</h3>
+          <p className="text-muted-foreground mb-4">{state.error}</p>
+          <Button onClick={actions.refresh} className="animate-pulse-glow">
+            Spróbuj ponownie
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Enhanced empty state z animations
+  if (!state.isLoading && state.recipes.length === 0) {
+    return (
+      <div className="text-center py-12 animate-page-enter">
+        <div className="max-w-md mx-auto">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 animate-rotate-gently">
+            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Brak przepisów</h3>
+          <p className="text-muted-foreground mb-4">
+            {state.filters.selectedTagIds.length > 0
+              ? "Nie znaleziono przepisów z wybranymi tagami."
+              : "Nie masz jeszcze żadnych przepisów. Dodaj swój pierwszy przepis!"}
+          </p>
+          <Button asChild className="animate-gentle-bounce">
+            <a href="/recipes/new">Dodaj pierwszy przepis</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-page-enter">
+      {/* Enhanced Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-slide-in-right">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-foreground">Moje Przepisy</h1>
+          {state.pagination.total > 0 && (
+            <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full animate-scale-in">
+              {state.pagination.total}
+            </span>
+          )}
         </div>
 
-        {/* Filtry */}
-        <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-          <SortSelector currentSort={state.filters.sort} onSortChange={actions.changeSort} disabled={state.isLoading} />
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <TagFilter
             availableTags={availableTags}
             selectedTagIds={state.filters.selectedTagIds}
             onSelectionChange={actions.changeTagFilter}
-            disabled={state.isLoading}
             isLoading={isLoadingTags}
+            disabled={state.isLoading}
           />
+          <SortSelector currentSort={state.filters.sort} onSortChange={actions.changeSort} disabled={state.isLoading} />
         </div>
-
-        {/* Błąd pobierania tagów */}
-        {tagsError && (
-          <div className="text-sm text-red-600 dark:text-red-400">Błąd przy ładowaniu tagów: {tagsError}</div>
-        )}
       </div>
 
-      {/* Główna zawartość */}
-      {state.error ? (
-        <div className="text-center py-12">
-          <div className="text-red-600 mb-4">{state.error}</div>
-          <button onClick={actions.refresh} className="text-blue-600 hover:text-blue-700 font-medium">
-            Spróbuj ponownie
-          </button>
-        </div>
-      ) : state.isLoading && state.recipes.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Ładowanie przepisów...</p>
-        </div>
-      ) : state.recipes.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {state.filters.selectedTagIds.length > 0 ? "Brak wyników" : "Brak przepisów"}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {state.filters.selectedTagIds.length > 0
-              ? "Spróbuj zmienić filtry lub dodać nowy przepis."
-              : "Dodaj swój pierwszy przepis, aby rozpocząć kolekcję."}
-          </p>
-          {state.filters.selectedTagIds.length > 0 ? (
-            <div className="space-x-4">
-              <button
-                onClick={() => actions.changeTagFilter([])}
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Wyczyść filtry
-              </button>
-              <button
-                onClick={() => (window.location.href = "/recipes/new")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Dodaj przepis
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => (window.location.href = "/recipes/new")}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Dodaj pierwszy przepis
-            </button>
-          )}
-        </div>
-      ) : (
-        <div>
-          {/* Siatka przepisów */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {state.recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} onClick={actions.navigateToRecipe} />
-            ))}
-          </div>
+      {tagsError && (
+        <div className="text-sm text-destructive animate-scale-in">Błąd przy ładowaniu tagów: {tagsError}</div>
+      )}
 
-          {/* Infinite scroll sentry element */}
-          {state.hasNextPage && (
-            <div ref={sentryRef} className="mt-8 text-center">
-              {state.isLoadingMore ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Ładowanie kolejnych przepisów...</span>
-                </div>
-              ) : (
-                <div className="text-gray-400 text-sm">Przewiń w dół, aby załadować więcej</div>
-              )}
+      {/* Enhanced Recipe Grid with Staggered Animations */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {state.recipes.map((recipe, index) => {
+          // Stagger animation based on index
+          const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+
+          return (
+            <div key={recipe.id} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
+              <RecipeCard recipe={recipe} onClick={handleRecipeClick} />
             </div>
-          )}
+          );
+        })}
+
+        {/* Enhanced Loading Skeletons */}
+        {(state.isLoading || state.isLoadingMore) &&
+          Array.from({ length: state.isLoadingMore ? 4 : 8 }).map((_, index) => {
+            const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
+
+            return (
+              <div key={`skeleton-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
+                <RecipeCardSkeleton />
+              </div>
+            );
+          })}
+      </div>
+
+      {/* Enhanced Load More Button */}
+      {state.hasNextPage && !state.isLoadingMore && (
+        <div className="text-center pt-8 animate-scale-in">
+          <Button
+            onClick={actions.loadMore}
+            variant="outline"
+            size="lg"
+            className="hover:animate-gentle-bounce transition-all duration-200"
+          >
+            Załaduj więcej przepisów
+          </Button>
         </div>
       )}
+
+      {/* Loading indicator for infinite scroll */}
+      {state.isLoadingMore && (
+        <div className="text-center py-8 animate-scale-in">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+            <span className="text-muted-foreground">Ładowanie kolejnych przepisów...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Invisible sentry element for infinite scroll */}
+      <div ref={sentryRef} className="h-1" />
     </div>
   );
 };
