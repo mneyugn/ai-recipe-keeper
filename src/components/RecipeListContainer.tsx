@@ -2,12 +2,15 @@ import React, { useMemo } from "react";
 import type { RecipeListQueryParams } from "../types";
 import RecipeCard from "./RecipeCard";
 import RecipeCardSkeleton from "./RecipeCardSkeleton";
+import RecipeListItem from "./RecipeListItem";
+import RecipeListItemSkeleton from "./RecipeListItemSkeleton";
 import SortSelector from "./SortSelector";
 import TagFilter from "./TagFilter";
 import { useRecipeList } from "./hooks/useRecipeList";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useTags } from "./hooks/useTags";
 import { useMobileDetection } from "./hooks/useMobileDetection";
+import { useRecipeViewType } from "../lib/hooks/useLocalStorage";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -17,6 +20,8 @@ interface RecipeListContainerProps {
 }
 
 const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams, userId }) => {
+  const [viewType, setViewType] = useRecipeViewType();
+
   const { tags: availableTags, isLoading: isLoadingTags, error: tagsError } = useTags();
   const isMobile = useMobileDetection();
 
@@ -127,7 +132,43 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         {/* Controls - Different layout for mobile vs desktop */}
         {isMobile ? (
           // Mobile: Compact icon-only controls to save space
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Przełącznik widoku - mobilny */}
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+              <Button
+                variant={viewType === "grid" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewType("grid")}
+                disabled={state.isLoading || state.isFiltering}
+                className="h-8 w-8 p-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  />
+                </svg>
+              </Button>
+              <Button
+                variant={viewType === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewType("list")}
+                disabled={state.isLoading || state.isFiltering}
+                className="h-8 w-8 p-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                  />
+                </svg>
+              </Button>
+            </div>
+
             <SortSelector
               currentSort={state.filters.sort}
               onSortChange={actions.changeSort}
@@ -172,6 +213,44 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
               />
             </div>
             <div className="flex items-center gap-3 xl:shrink-0">
+              {/* Przełącznik widoku */}
+              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                <Button
+                  variant={viewType === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewType("grid")}
+                  disabled={state.isLoading || state.isFiltering}
+                  className="h-8 px-3"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 14a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                    />
+                  </svg>
+                  Kafelki
+                </Button>
+                <Button
+                  variant={viewType === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewType("list")}
+                  disabled={state.isLoading || state.isFiltering}
+                  className="h-8 px-3"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                    />
+                  </svg>
+                  Lista
+                </Button>
+              </div>
+
               <SortSelector
                 currentSort={state.filters.sort}
                 onSortChange={actions.changeSort}
@@ -187,7 +266,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         <div className="text-sm text-destructive animate-scale-in">Błąd przy ładowaniu tagów: {tagsError}</div>
       )}
 
-      {/* Enhanced Recipe Grid with Staggered Animations or Empty State */}
+      {/* Enhanced Recipe Display with Grid/List Views */}
       {!state.isLoading && !state.isFiltering && state.recipes.length === 0 ? (
         <EmptyStateContent />
       ) : state.isLoading && isMobile ? (
@@ -195,7 +274,9 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         <LoadingSpinner text="Ładowanie przepisów..." className="py-16" />
       ) : (
         <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          className={
+            viewType === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-3"
+          }
           style={{
             minHeight: state.isLoading ? "400px" : "auto",
             contain: "layout style",
@@ -210,7 +291,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
 
             return (
               <div key={recipe.id} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-                <RecipeCard recipe={recipe} />
+                {viewType === "grid" ? <RecipeCard recipe={recipe} /> : <RecipeListItem recipe={recipe} />}
               </div>
             );
           })}
@@ -223,7 +304,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
 
               return (
                 <div key={`skeleton-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-                  <RecipeCardSkeleton />
+                  {viewType === "grid" ? <RecipeCardSkeleton /> : <RecipeListItemSkeleton />}
                 </div>
               );
             })}
@@ -236,7 +317,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
 
               return (
                 <div key={`skeleton-more-${index}`} className={`opacity-0 animate-fade-in-up ${staggerClass}`}>
-                  <RecipeCardSkeleton />
+                  {viewType === "grid" ? <RecipeCardSkeleton /> : <RecipeListItemSkeleton />}
                 </div>
               );
             })}

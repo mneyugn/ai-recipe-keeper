@@ -303,6 +303,15 @@ export interface LogoutButtonProps {
   isLoading?: boolean;
 }
 
+// ===== UI Component Types =====
+
+/**
+ * View type for recipe list display
+ * Grid: Display recipes in card grid layout
+ * List: Display recipes in compact list layout
+ */
+export type ViewType = "grid" | "list";
+
 // ===== OpenRouter Service Types =====
 
 /**
