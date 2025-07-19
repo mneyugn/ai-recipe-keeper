@@ -421,7 +421,7 @@ export function AppSidebar({ user, currentPath, onLogout, className = "" }: Side
       <>
         <MobileHeader showHamburger={true} onHamburgerClick={() => setIsTabletMenuOpen(true)} />
         <Sheet open={isTabletMenuOpen} onOpenChange={setIsTabletMenuOpen}>
-          <SheetContent side="left" className="w-80 p-0">
+          <SheetContent side="left" className="w-72 p-0">
             <SidebarContent />
           </SheetContent>
         </Sheet>
@@ -429,15 +429,14 @@ export function AppSidebar({ user, currentPath, onLogout, className = "" }: Side
     );
   }
 
-  // Desktop (>= 1024px): Fixed sidebar (current behavior)
+  // Desktop (>= 1024px): Fixed sidebar
   return (
-    <div className={`fixed left-0 top-0 h-full w-80 z-40 ${className}`}>
+    <div className={`fixed left-0 top-0 h-full w-72 z-40 ${className}`}>
       <SidebarContent />
     </div>
   );
 }
 
-// Hook do zarządzania stanem sidebara
 export function useSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 

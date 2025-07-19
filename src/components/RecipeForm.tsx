@@ -30,7 +30,6 @@ import DynamicFieldList from "@/components/DynamicFieldList";
 import MultiSelectTags from "@/components/MultiSelectTags";
 import AiFeedbackButtons from "@/components/AiFeedbackButtons";
 
-// Funkcja do pobierania tagów z API
 const fetchTags = async (): Promise<TagDTO[]> => {
   try {
     const response = await fetch("/api/tags");
@@ -46,7 +45,6 @@ const fetchTags = async (): Promise<TagDTO[]> => {
   }
 };
 
-// Schemat walidacji Zod
 const recipeSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Nazwa potrawy jest wymagana").max(255, "Nazwa potrawy nie może przekraczać 255 znaków"),

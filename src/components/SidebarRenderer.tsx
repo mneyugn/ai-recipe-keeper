@@ -69,7 +69,7 @@ export function SidebarRenderer() {
 
   if (isLoading) {
     return (
-      <div className="fixed left-0 top-0 h-full w-80 z-40 backdrop-blur-xl bg-sidebar/95 border-r border-sidebar-border/20 shadow-xl hidden lg:block">
+      <div className="fixed left-0 top-0 h-full w-72 z-40 backdrop-blur-xl bg-sidebar/95 border-r border-sidebar-border/20 shadow-xl hidden lg:block">
         <div className="flex flex-col h-full">
           {/* Brand section skeleton */}
           <div className="p-6 border-b border-sidebar-border/10">
@@ -90,14 +90,13 @@ export function SidebarRenderer() {
           </div>
 
           {/* Navigation skeleton */}
-          <div className="flex-1 p-4 space-y-1">
+          <div className="flex-1 p-4 space-y-1 mt-2">
             {[1, 2].map((i) => (
               <div key={i} className="flex items-center justify-between px-3 py-3 rounded-xl">
                 <div className="flex items-center space-x-3">
                   <div className="w-5 h-5 bg-muted animate-shimmer rounded-md" />
                   <div className="h-4 w-24 bg-muted animate-shimmer rounded-md" />
                 </div>
-                {i === 1 && <div className="w-8 h-5 bg-muted animate-shimmer rounded-full" />}
               </div>
             ))}
           </div>

@@ -115,7 +115,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
   return (
     <div className="space-y-6 animate-page-enter">
       {/* Enhanced Header */}
-      <div className="space-y-4 animate-slide-in-right max-w-6xl">
+      <div className="space-y-4 animate-slide-in-right max-w-7xl">
         {/* Title and Counter */}
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Moje Przepisy</h1>
@@ -201,7 +201,7 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
           </div>
         ) : (
           // Desktop: Original layout with labels
-          <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+          <div className="flex flex-col xl:flex-row gap-4 xl:items-center">
             <div className="flex-1 min-w-0">
               <TagFilter
                 availableTags={availableTags}
@@ -275,7 +275,9 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
       ) : (
         <div
           className={
-            viewType === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-3"
+            viewType === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6"
+              : "space-y-3 max-w-7xl"
           }
           style={{
             minHeight: state.isLoading ? "400px" : "auto",
