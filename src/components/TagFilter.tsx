@@ -13,6 +13,7 @@ interface TagFilterProps {
   onSelectionChange: (tagIds: string[]) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  hideLabel?: boolean;
 }
 
 const TagFilter: React.FC<TagFilterProps> = ({
@@ -21,6 +22,7 @@ const TagFilter: React.FC<TagFilterProps> = ({
   onSelectionChange,
   disabled = false,
   isLoading = false,
+  hideLabel = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -47,8 +49,10 @@ const TagFilter: React.FC<TagFilterProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">Filtruj po tagach:</span>
+      <div className={hideLabel ? "flex items-center gap-3" : "flex flex-col sm:flex-row gap-3 sm:items-center"}>
+        {!hideLabel && (
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">Filtruj po tagach:</span>
+        )}
 
         <div className="flex items-center gap-3">
           <Popover open={open} onOpenChange={setOpen}>
@@ -56,18 +60,33 @@ const TagFilter: React.FC<TagFilterProps> = ({
               <Button
                 variant="outline"
                 disabled={disabled || isLoading}
-                className="justify-between min-w-[160px]"
+                className={hideLabel ? "justify-center w-9 h-9 p-0" : "justify-between min-w-[160px]"}
                 aria-label="Wybierz tagi do filtrowania"
               >
-                <span className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  <span>
-                    {selectedTagIds.length === 0
-                      ? "Wybierz tagi"
-                      : `${selectedTagIds.length} ${selectedTagIds.length === 1 ? "tag" : "tagi"}`}
-                  </span>
-                </span>
-                <ChevronDown className="h-4 w-4 opacity-50" />
+                {hideLabel ? (
+                  // Mobile: Icon only with badge for selected count
+                  <div className="relative">
+                    <Tag className="h-4 w-4" />
+                    {selectedTagIds.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                        {selectedTagIds.length > 9 ? "9+" : selectedTagIds.length}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  // Desktop: Full text version
+                  <>
+                    <span className="flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      <span>
+                        {selectedTagIds.length === 0
+                          ? "Wybierz tagi"
+                          : `${selectedTagIds.length} ${selectedTagIds.length === 1 ? "tag" : "tagi"}`}
+                      </span>
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </>
+                )}
               </Button>
             </PopoverTrigger>
 
@@ -105,7 +124,7 @@ const TagFilter: React.FC<TagFilterProps> = ({
             </PopoverContent>
           </Popover>
 
-          {selectedTagIds.length > 0 && (
+          {selectedTagIds.length > 0 && !hideLabel && (
             <Button variant="ghost" size="sm" onClick={clearAllTags} className="text-xs">
               Wyczyść wszystkie
             </Button>
@@ -113,8 +132,8 @@ const TagFilter: React.FC<TagFilterProps> = ({
         </div>
       </div>
 
-      {/* Wybrane tagi jako Badge */}
-      {selectedTags.length > 0 && (
+      {/* Wybrane tagi jako Badge - ukryte na mobile */}
+      {selectedTags.length > 0 && !hideLabel && (
         <div className="flex flex-wrap gap-2">
           {selectedTags.map((tag) => (
             <Badge

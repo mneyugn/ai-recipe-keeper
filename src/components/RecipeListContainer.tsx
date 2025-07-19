@@ -7,7 +7,9 @@ import TagFilter from "./TagFilter";
 import { useRecipeList } from "./hooks/useRecipeList";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useTags } from "./hooks/useTags";
+import { useMobileDetection } from "./hooks/useMobileDetection";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface RecipeListContainerProps {
   initialParams: RecipeListQueryParams;
@@ -16,6 +18,7 @@ interface RecipeListContainerProps {
 
 const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams, userId }) => {
   const { tags: availableTags, isLoading: isLoadingTags, error: tagsError } = useTags();
+  const isMobile = useMobileDetection();
 
   const tagIdToSlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -111,32 +114,73 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         {/* Title and Counter */}
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-foreground">Moje Przepisy</h1>
-          {state.pagination.total > 0 && (
-            <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full animate-scale-in">
-              {state.pagination.total}
-            </span>
-          )}
+          {/* Counter with fixed space to prevent layout shift */}
+          <div className="min-w-[2rem]">
+            {state.pagination.total > 0 && (
+              <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full animate-scale-in">
+                {state.pagination.total}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
-          <div className="flex-1 min-w-0">
-            <TagFilter
-              availableTags={availableTags}
-              selectedTagIds={state.filters.selectedTagIds}
-              onSelectionChange={actions.changeTagFilter}
-              isLoading={isLoadingTags}
-              disabled={state.isLoading || state.isFiltering}
-            />
-          </div>
-          <div className="flex items-center gap-3 xl:shrink-0">
+        {/* Controls - Different layout for mobile vs desktop */}
+        {isMobile ? (
+          // Mobile: Compact icon-only controls to save space
+          <div className="flex items-center gap-3">
             <SortSelector
               currentSort={state.filters.sort}
               onSortChange={actions.changeSort}
               disabled={state.isLoading || state.isFiltering}
+              hideLabel={true}
             />
+
+            {isLoadingTags ? (
+              // Simple placeholder icon during loading
+              <div className="h-9 w-9 bg-muted rounded-md animate-pulse flex items-center justify-center">
+                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
+              </div>
+            ) : (
+              <TagFilter
+                availableTags={availableTags}
+                selectedTagIds={state.filters.selectedTagIds}
+                onSelectionChange={actions.changeTagFilter}
+                isLoading={false}
+                disabled={state.isLoading || state.isFiltering}
+                hideLabel={true}
+              />
+            )}
           </div>
-        </div>
+        ) : (
+          // Desktop: Original layout with labels
+          <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+            <div className="flex-1 min-w-0">
+              <TagFilter
+                availableTags={availableTags}
+                selectedTagIds={state.filters.selectedTagIds}
+                onSelectionChange={actions.changeTagFilter}
+                isLoading={isLoadingTags}
+                disabled={state.isLoading || state.isFiltering}
+                hideLabel={false}
+              />
+            </div>
+            <div className="flex items-center gap-3 xl:shrink-0">
+              <SortSelector
+                currentSort={state.filters.sort}
+                onSortChange={actions.changeSort}
+                disabled={state.isLoading || state.isFiltering}
+                hideLabel={false}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {tagsError && (
@@ -146,6 +190,9 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
       {/* Enhanced Recipe Grid with Staggered Animations or Empty State */}
       {!state.isLoading && !state.isFiltering && state.recipes.length === 0 ? (
         <EmptyStateContent />
+      ) : state.isLoading && isMobile ? (
+        // Mobile: simple loading state to prevent layout jumps
+        <LoadingSpinner text="Ładowanie przepisów..." className="py-16" />
       ) : (
         <div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
@@ -168,8 +215,9 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
             );
           })}
 
-          {/* Optimized Loading Skeletons - only for initial loading, not filtering */}
+          {/* Optimized Loading Skeletons - only for initial loading on desktop, not filtering */}
           {state.isLoading &&
+            !isMobile &&
             Array.from({ length: 4 }).map((_, index) => {
               const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
 
@@ -180,8 +228,9 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
               );
             })}
 
-          {/* Load More Skeletons - only for pagination */}
+          {/* Load More Skeletons - only for pagination and only on desktop */}
           {state.isLoadingMore &&
+            !isMobile &&
             Array.from({ length: 3 }).map((_, index) => {
               const staggerClass = `stagger-${Math.min((index % 6) + 1, 6)}`;
 
@@ -218,12 +267,14 @@ const RecipeListContainer: React.FC<RecipeListContainerProps> = ({ initialParams
         </div>
       )}
 
-      {/* Loading indicator for infinite scroll */}
+      {/* Loading indicator for infinite scroll - also simplified for mobile */}
       {state.isLoadingMore && (
         <div className="text-center py-8 animate-scale-in">
           <div className="flex items-center justify-center gap-2">
             <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-            <span className="text-muted-foreground">Ładowanie kolejnych przepisów...</span>
+            <span className="text-muted-foreground">
+              {isMobile ? "Ładowanie..." : "Ładowanie kolejnych przepisów..."}
+            </span>
           </div>
         </div>
       )}

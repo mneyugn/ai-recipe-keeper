@@ -1,11 +1,13 @@
 import { useUserProfile } from "./hooks/useUserProfile";
 import { useLogout } from "./hooks/useLogout";
+import { useMobileDetection } from "./hooks/useMobileDetection";
 import { UserInfoCard } from "./profile/UserInfoCard";
 import { ExtractionLimitCard } from "./profile/ExtractionLimitCard";
 import { LogoutButton } from "./profile/LogoutButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 /**
  * ProfileContainer - Main container component for user profile page
@@ -14,9 +16,20 @@ import { Card, CardContent } from "@/components/ui/card";
 export function ProfileContainer() {
   const { profile, isLoading, error, refetch } = useUserProfile();
   const { logout, isLoading: isLogoutLoading, error: logoutError } = useLogout();
+  const isMobile = useMobileDetection();
 
-  // Loading state
+  // Loading state - different behavior for mobile vs desktop
   if (isLoading) {
+    if (isMobile) {
+      // On mobile: simple spinner to avoid layout shifts that cause bottom bar jumping
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <LoadingSpinner text="Ładowanie profilu..." />
+        </div>
+      );
+    }
+
+    // On desktop: full skeleton as before
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-6">

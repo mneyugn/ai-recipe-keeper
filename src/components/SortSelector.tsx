@@ -9,6 +9,7 @@ interface SortSelectorProps {
   currentSort: RecipeSortOption;
   onSortChange: (sort: RecipeSortOption) => void;
   disabled?: boolean;
+  hideLabel?: boolean;
 }
 
 const sortOptions: { value: RecipeSortOption; label: string; icon: LucideIcon }[] = [
@@ -18,20 +19,25 @@ const sortOptions: { value: RecipeSortOption; label: string; icon: LucideIcon }[
   { value: "name:desc", label: "Nazwa Z-A", icon: ArrowDownZA },
 ];
 
-const SortSelector: React.FC<SortSelectorProps> = ({ currentSort, onSortChange, disabled = false }) => {
+const SortSelector: React.FC<SortSelectorProps> = ({
+  currentSort,
+  onSortChange,
+  disabled = false,
+  hideLabel = false,
+}) => {
   const currentOption = sortOptions.find((option) => option.value === currentSort);
   const CurrentIcon = currentOption?.icon;
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sortuj:</span>
+      {!hideLabel && <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sortuj:</span>}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
             disabled={disabled}
-            className="justify-between min-w-[140px]"
+            className={hideLabel ? "justify-between min-w-[120px]" : "justify-between min-w-[140px]"}
             aria-label="Wybierz sposób sortowania"
           >
             <span className="flex items-center gap-2">
