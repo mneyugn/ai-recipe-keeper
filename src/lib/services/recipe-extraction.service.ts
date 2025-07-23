@@ -2,10 +2,10 @@ import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../t
 import { supabaseClient } from "../../db/supabase.client";
 import type { Database, Json } from "../../db/database.types";
 import { OpenRouterService } from "../openrouter.service";
-import type { OpenRouterConfig, ChatCompletionRequest, ResponseFormat } from "../../types";
+import type { ChatCompletionRequest, ResponseFormat } from "../../types";
 
 /**
- * JSON Schema dla odpowiedzi AI - wyekstraktowane dane przepisu
+ * JSON Schema for AI response - extracted recipe data
  */
 const RECIPE_EXTRACTION_SCHEMA = {
   type: "object",
@@ -62,7 +62,7 @@ const RECIPE_EXTRACTION_SCHEMA = {
 };
 
 /**
- * System prompt dla ekstrakcji przepisów z tekstu
+ * System prompt for recipe extraction from text
  */
 const RECIPE_EXTRACTION_SYSTEM_PROMPT = `You are an expert at analyzing Polish culinary recipes. Your task is to extract structured recipe data from the provided text.
 
@@ -87,25 +87,7 @@ Return JSON response following the schema EXACTLY.`;
  * Includes rate limiting and database logging functionality
  */
 export class RecipeExtractionService {
-  private openRouterService: OpenRouterService;
-
-  constructor() {
-    // Inicjalizacja OpenRouter Service
-    const config: OpenRouterConfig = {
-      apiKey: import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "",
-      baseUrl: "https://openrouter.ai/api/v1",
-      defaultModel: "google/gemini-2.0-flash-001",
-      timeout: 60000, // 60 sekund dla dłuższych requestów
-      maxRetries: 2,
-      retryDelay: 2000,
-    };
-
-    if (!config.apiKey) {
-      throw new Error("OPENROUTER_API_KEY nie jest ustawiony w zmiennych środowiskowych");
-    }
-
-    this.openRouterService = new OpenRouterService(config);
-  }
+  constructor(private openRouterService: OpenRouterService) {}
 
   /**
    * Logs extraction attempt to database
@@ -242,7 +224,7 @@ export class RecipeExtractionService {
     } catch (error) {
       console.error("Error in extractFromText:", error);
 
-      // Rzucamy error dalej, żeby endpoint mógł go odpowiednio obsłużyć
+      // throw error to endpoint to handle it properly
       throw error;
     }
   }
@@ -376,7 +358,7 @@ export class RecipeExtractionService {
   }
 
   /**
-   * Zwraca domyślne dane przepisu w przypadku krytycznego błędu
+   * Returns default recipe data in case of critical error
    * @private
    */
   private getDefaultRecipeData(): ExtractedRecipeDataDTO {

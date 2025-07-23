@@ -1,8 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { ExtractFromUrlResponseDTO, ErrorResponseDTO } from "../../../types";
-import { RecipeExtractionService } from "../../../lib/services/recipe-extraction.service";
-import { UrlScraperService } from "../../../lib/services/url-scraper.service";
+import { recipeExtractionService, urlScraperService } from "../../../lib/services";
 
 const extractFromUrlSchema = z.object({
   url: z
@@ -100,14 +99,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { url } = validationResult.data;
 
-    // 4. Initialize services
-    const extractionService = new RecipeExtractionService();
-    const scraperService = new UrlScraperService();
-
-    // 5. Check daily extraction limit
+    // 4. Check daily extraction limit
     let isUnderLimit;
     try {
-      isUnderLimit = await extractionService.checkDailyLimit(userId);
+      isUnderLimit = await recipeExtractionService.checkDailyLimit(userId);
     } catch (error) {
       console.error("Error checking daily limit:", error);
       return new Response(
@@ -139,19 +134,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    // 6. Scrape and extract recipe data from URL
+    // 5. Scrape and extract recipe data from URL
     let extractionResult;
     let extractionLogId;
     const startTime = Date.now();
 
     try {
-      extractionResult = await scraperService.extractFromUrl(url);
+      extractionResult = await urlScraperService.extractFromUrl(url);
       const generationDuration = Date.now() - startTime;
 
       // Sprawdź czy są krytyczne błędy (brak składników lub kroków)
       if (extractionResult.hasErrors) {
         // Log failed extraction attempt
-        extractionLogId = await extractionService.logExtractionAttempt(
+        extractionLogId = await recipeExtractionService.logExtractionAttempt(
           userId,
           url,
           null,
@@ -179,7 +174,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
 
       // 7. Log successful extraction to database (nawet z ostrzeżeniami)
-      extractionLogId = await extractionService.logExtractionAttempt(
+      extractionLogId = await recipeExtractionService.logExtractionAttempt(
         userId,
         url, // URL jako input data
         extractionResult.data,
@@ -189,14 +184,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
 
       // 8. Increment daily extraction counter
-      await extractionService.incrementDailyCount(userId);
+      await recipeExtractionService.incrementDailyCount(userId);
     } catch (error) {
       console.error("Error during URL extraction:", error);
       const generationDuration = Date.now() - startTime;
 
       // Log failed extraction attempt
       try {
-        extractionLogId = await extractionService.logExtractionAttempt(
+        extractionLogId = await recipeExtractionService.logExtractionAttempt(
           userId,
           url,
           null,

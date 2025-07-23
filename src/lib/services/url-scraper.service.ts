@@ -1,6 +1,6 @@
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
 import { OpenRouterService } from "../openrouter.service";
-import type { OpenRouterConfig, ChatCompletionRequest, ResponseFormat } from "../../types";
+import type { ChatCompletionRequest, ResponseFormat } from "../../types";
 
 /**
  * JSON Schema dla odpowiedzi AI - wyekstraktowane dane przepisu z URL
@@ -91,32 +91,15 @@ interface ScrapingResult {
 }
 
 /**
- * Serwis do scrapingu przepisów z obsługiwanych URL
+ * Service for scraping recipes from supported URLs
  */
 export class UrlScraperService {
-  private openRouterService: OpenRouterService;
   private supportedDomains = ["aniagotuje.pl", "kwestiasmaku.com"];
 
-  constructor() {
-    // Inicjalizacja OpenRouter Service
-    const config: OpenRouterConfig = {
-      apiKey: import.meta.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || "",
-      baseUrl: "https://openrouter.ai/api/v1",
-      defaultModel: "google/gemini-2.0-flash-001",
-      timeout: 60000,
-      maxRetries: 2,
-      retryDelay: 2000,
-    };
-
-    if (!config.apiKey) {
-      throw new Error("OPENROUTER_API_KEY nie jest ustawiony w zmiennych środowiskowych");
-    }
-
-    this.openRouterService = new OpenRouterService(config);
-  }
+  constructor(private openRouterService: OpenRouterService) {}
 
   /**
-   * Sprawdza czy URL jest z obsługiwanej domeny
+   * Checks if a URL is from a supported domain
    */
   isSupportedUrl(url: string): boolean {
     try {
