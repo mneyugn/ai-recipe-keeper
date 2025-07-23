@@ -438,8 +438,8 @@ Treść:
 ${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
         responseFormat,
         modelParameters: {
-          temperature: 0.1,
-          max_tokens: 2000,
+          temperature: 1,
+          max_tokens: 3000,
         },
       };
 

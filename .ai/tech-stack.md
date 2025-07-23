@@ -17,7 +17,7 @@
 ## CI/CD i Hosting
 
 - Github Actions
-- DigitalOcean
+- Cloudflare Pages
 
 ## Testowanie
 

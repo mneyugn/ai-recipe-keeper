@@ -201,7 +201,6 @@ export class RecipeExtractionService {
    */
   async extractFromText(text: string): Promise<ExtractionValidationResult> {
     try {
-      // Przygotowanie response format z JSON schema
       const responseFormat: ResponseFormat = {
         type: "json_schema",
         json_schema: {
@@ -211,21 +210,18 @@ export class RecipeExtractionService {
         },
       };
 
-      // Przygotowanie requestu do OpenRouter
       const chatRequest: ChatCompletionRequest = {
         systemMessage: RECIPE_EXTRACTION_SYSTEM_PROMPT,
         userMessage: `Wyekstraktuj dane przepisu z następującego tekstu:\n\n${text}`,
         responseFormat,
         modelParameters: {
-          temperature: 0.1, // Niska temperatura dla większej konsystencji
-          max_tokens: 2000,
+          temperature: 1,
+          max_tokens: 3000,
         },
       };
 
-      // Wywołanie OpenRouter API
       const response = await this.openRouterService.createChatCompletion(chatRequest);
 
-      // Parsowanie odpowiedzi JSON
       const assistantMessage = response.choices[0]?.message?.content;
       if (!assistantMessage) {
         throw new Error("Brak odpowiedzi od modelu AI");
@@ -240,7 +236,6 @@ export class RecipeExtractionService {
         );
       }
 
-      // Walidacja wyekstraktowanych danych
       const validationResult = this.validateExtractedData(extractedData);
 
       return validationResult;
@@ -253,7 +248,7 @@ export class RecipeExtractionService {
   }
 
   /**
-   * Waliduje wyekstraktowane dane przepisu i zwraca dane z ostrzeżeniami
+   * Validate extracted recipe data and return data with warnings
    * @private
    */
   private validateExtractedData(data: unknown): ExtractionValidationResult {
@@ -272,7 +267,6 @@ export class RecipeExtractionService {
 
     const obj = data as Record<string, unknown>;
 
-    // Inicjalizacja wyniku z domyślnymi wartościami
     const result: ExtractedRecipeDataDTO = {
       name: "",
       ingredients: [],
@@ -281,15 +275,14 @@ export class RecipeExtractionService {
       suggested_tags: [],
     };
 
-    // Walidacja nazwy
+    // validate name
     if (!obj.name || typeof obj.name !== "string" || obj.name.trim().length === 0) {
       warnings.push("W przepisie nie wykryto nazwy - uzupełnij ją samodzielnie");
-      result.name = "Nowy przepis"; // Domyślna nazwa
+      result.name = "Nowy przepis";
     } else {
       result.name = obj.name.trim();
     }
 
-    // Walidacja składników
     if (!Array.isArray(obj.ingredients) || obj.ingredients.length === 0) {
       warnings.push("Nie wykryto składników - dodaj je samodzielnie");
       hasErrors = true;
@@ -311,7 +304,7 @@ export class RecipeExtractionService {
       result.ingredients = validIngredients;
     }
 
-    // Walidacja kroków
+    // validate steps
     if (!Array.isArray(obj.steps) || obj.steps.length === 0) {
       warnings.push("Nie wykryto kroków przygotowania - dodaj je samodzielnie");
       hasErrors = true;
@@ -333,12 +326,12 @@ export class RecipeExtractionService {
       result.steps = validSteps;
     }
 
-    // Walidacja czasu przygotowania
+    // validate preparation time
     if (obj.preparation_time && typeof obj.preparation_time === "string" && obj.preparation_time.trim().length > 0) {
       result.preparation_time = obj.preparation_time.trim();
     }
 
-    // Walidacja tagów
+    // validate tags
     const allowedTags = [
       "obiad",
       "śniadanie",
