@@ -113,7 +113,7 @@ describe("AuthService", () => {
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
       // Act & Assert
-      await expect(authService.login(loginData)).rejects.toThrow("Błąd połączenia z serwerem");
+      await expect(authService.login(loginData)).rejects.toThrow("Connection error");
     });
   });
 
@@ -397,7 +397,7 @@ describe("AuthService", () => {
           email: "test@example.com",
           password: "password123",
         })
-      ).rejects.toThrow("Błąd połączenia z serwerem");
+      ).rejects.toThrow("Connection error");
     });
 
     test("nie maskuje błędów Unauthorized", async () => {

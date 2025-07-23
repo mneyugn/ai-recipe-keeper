@@ -15,16 +15,16 @@ export class RecipeService {
   constructor(private supabase: SupabaseClient) {}
 
   /**
-   * Pobiera listę przepisów użytkownika z paginacją i filtrowaniem
+   * Fetches user's recipe list with pagination and filtering
    */
   async getRecipeList(userId: string, params: ValidatedRecipeListParams): Promise<RecipeListResponseDTO> {
     const { page, limit, sort, tags } = params;
     const offset = (page - 1) * limit;
 
-    // Budowanie zapytania z sortowaniem
+    // build query with sorting
     const [sortField, sortDirection] = sort.split(":") as [string, "asc" | "desc"];
 
-    // Podstawowe zapytanie bez wymuszania inner join dla tagów
+    // basic query without forcing inner join for tags
     let query = this.supabase
       .from("recipes")
       .select(
@@ -44,7 +44,7 @@ export class RecipeService {
       )
       .eq("user_id", userId);
 
-    // Filtrowanie po tagach jeśli podane - wymaga nowe zapytanie z inner join
+    // filtering by tags if provided - requires new query with inner join
     if (tags && tags.length > 0) {
       query = this.supabase
         .from("recipes")
@@ -67,20 +67,20 @@ export class RecipeService {
         .in("recipe_tags.tags.slug", tags);
     }
 
-    // Sortowanie
+    // sorting
     query = query.order(sortField, { ascending: sortDirection === "asc" });
 
-    // Paginacja
+    // pagination
     query = query.range(offset, offset + limit - 1);
 
     const { data: recipes, count, error } = await query;
 
     if (error) {
-      console.error("Błąd podczas pobierania listy przepisów:", error);
-      throw new Error("Nie udało się pobrać listy przepisów");
+      console.error("Error fetching recipe list:", error);
+      throw new Error("Failed to fetch recipe list");
     }
 
-    // Mapowanie na DTO
+    // mapping to DTO
     const recipeItems: RecipeListItemDTO[] =
       recipes?.map((recipe) => ({
         id: recipe.id,
@@ -105,7 +105,7 @@ export class RecipeService {
   }
 
   /**
-   * Pobiera szczegóły konkretnego przepisu
+   * Fetches details of a specific recipe
    */
   async getRecipeDetails(recipeId: string, userId: string): Promise<RecipeDetailDTO> {
     const { data: recipe, error } = await this.supabase
@@ -139,13 +139,13 @@ export class RecipeService {
 
     if (error) {
       if (error.code === "PGRST116") {
-        throw new Error("Przepis nie został znaleziony");
+        throw new Error("Recipe not found");
       }
-      console.error("Błąd podczas pobierania szczegółów przepisu:", error);
-      throw new Error("Nie udało się pobrać szczegółów przepisu");
+      console.error("Error fetching recipe details:", error);
+      throw new Error("Failed to fetch recipe details");
     }
 
-    // Mapowanie tagów
+    // mapping tags
     const tags: TagDTO[] =
       recipe.recipe_tags
         ?.map((rt) => {
@@ -176,15 +176,15 @@ export class RecipeService {
   }
 
   /**
-   * Tworzy nowy przepis z obsługą tagów
+   * Creates a new recipe with tag handling
    */
   async createRecipe(userId: string, command: CreateRecipeCommand): Promise<RecipeDetailDTO> {
-    // Walidacja tag_ids jeśli podane
+    // validate tag_ids if provided
     if (command.tag_ids && command.tag_ids.length > 0) {
       await this.validateTagIds(command.tag_ids);
     }
 
-    // Przygotowanie danych do wstawienia
+    // prepare data to insert
     const recipeData: TablesInsert<"recipes"> = {
       user_id: userId,
       name: command.name,
@@ -197,7 +197,7 @@ export class RecipeService {
       notes: command.notes || null,
     };
 
-    // Transakcja: tworzenie przepisu + przypisanie tagów
+    // transaction: create recipe + assign tags
     const { data: recipe, error: recipeError } = await this.supabase
       .from("recipes")
       .insert(recipeData)
@@ -205,11 +205,11 @@ export class RecipeService {
       .single();
 
     if (recipeError) {
-      console.error("Błąd podczas tworzenia przepisu:", recipeError);
-      throw new Error("Nie udało się utworzyć przepisu");
+      console.error("Error creating recipe:", recipeError);
+      throw new Error("Failed to create recipe");
     }
 
-    // Przypisanie tagów jeśli podane
+    // assign tags if provided
     if (command.tag_ids && command.tag_ids.length > 0) {
       const recipeTags = command.tag_ids.map((tagId) => ({
         recipe_id: recipe.id,
@@ -219,30 +219,30 @@ export class RecipeService {
       const { error: tagsError } = await this.supabase.from("recipe_tags").insert(recipeTags);
 
       if (tagsError) {
-        console.error("Błąd podczas przypisywania tagów:", tagsError);
-        // Rollback - usunięcie utworzonego przepisu
+        console.error("Error assigning tags:", tagsError);
+        // rollback - delete created recipe
         await this.supabase.from("recipes").delete().eq("id", recipe.id);
-        throw new Error("Nie udało się przypisać tagów do przepisu");
+        throw new Error("Failed to assign tags to recipe");
       }
     }
 
-    // Pobieranie utworzonego przepisu z tagami
+    // fetch created recipe with tags
     return await this.getRecipeDetails(recipe.id, userId);
   }
 
   /**
-   * Aktualizuje istniejący przepis
+   * Updates an existing recipe
    */
   async updateRecipe(recipeId: string, userId: string, command: UpdateRecipeCommand): Promise<RecipeDetailDTO> {
-    // Sprawdzenie własności przepisu
+    // check recipe ownership
     await this.checkOwnership(recipeId, userId);
 
-    // Walidacja tag_ids jeśli podane
+    // validate tag_ids if provided
     if (command.tag_ids && command.tag_ids.length > 0) {
       await this.validateTagIds(command.tag_ids);
     }
 
-    // Przygotowanie danych do aktualizacji
+    // prepare data to update
     const updateData: TablesUpdate<"recipes"> = {
       name: command.name,
       ingredients: command.ingredients,
@@ -255,7 +255,7 @@ export class RecipeService {
       updated_at: new Date().toISOString(),
     };
 
-    // Aktualizacja przepisu
+    // update recipe
     const { error: updateError } = await this.supabase
       .from("recipes")
       .update(updateData)
@@ -263,19 +263,19 @@ export class RecipeService {
       .eq("user_id", userId);
 
     if (updateError) {
-      console.error("Błąd podczas aktualizacji przepisu:", updateError);
-      throw new Error("Nie udało się zaktualizować przepisu");
+      console.error("Error updating recipe:", updateError);
+      throw new Error("Failed to update recipe");
     }
 
-    // Aktualizacja tagów - usunięcie starych i dodanie nowych
+    // update tags - delete old and add new
     const { error: deleteTagsError } = await this.supabase.from("recipe_tags").delete().eq("recipe_id", recipeId);
 
     if (deleteTagsError) {
-      console.error("Błąd podczas usuwania starych tagów:", deleteTagsError);
-      throw new Error("Nie udało się zaktualizować tagów przepisu");
+      console.error("Error deleting old tags:", deleteTagsError);
+      throw new Error("Failed to update recipe tags");
     }
 
-    // Dodanie nowych tagów jeśli podane
+    // add new tags if provided
     if (command.tag_ids && command.tag_ids.length > 0) {
       const recipeTags = command.tag_ids.map((tagId) => ({
         recipe_id: recipeId,
@@ -285,32 +285,32 @@ export class RecipeService {
       const { error: insertTagsError } = await this.supabase.from("recipe_tags").insert(recipeTags);
 
       if (insertTagsError) {
-        console.error("Błąd podczas dodawania nowych tagów:", insertTagsError);
-        throw new Error("Nie udało się zaktualizować tagów przepisu");
+        console.error("Error adding new tags:", insertTagsError);
+        throw new Error("Failed to update recipe tags");
       }
     }
 
-    // Pobieranie zaktualizowanego przepisu
+    // fetch updated recipe
     return await this.getRecipeDetails(recipeId, userId);
   }
 
   /**
-   * Usuwa przepis
+   * Deletes a recipe
    */
   async deleteRecipe(recipeId: string, userId: string): Promise<void> {
-    // Sprawdzenie własności przepisu
+    // check recipe ownership
     await this.checkOwnership(recipeId, userId);
 
     const { error } = await this.supabase.from("recipes").delete().eq("id", recipeId).eq("user_id", userId);
 
     if (error) {
-      console.error("Błąd podczas usuwania przepisu:", error);
-      throw new Error("Nie udało się usunąć przepisu");
+      console.error("Error deleting recipe:", error);
+      throw new Error("Failed to delete recipe");
     }
   }
 
   /**
-   * Sprawdza czy użytkownik jest właścicielem przepisu
+   * Checks if user is the owner of the recipe
    */
   async checkOwnership(recipeId: string, userId: string): Promise<RecipeOwnershipCheck> {
     const { data: recipe, error } = await this.supabase
@@ -328,8 +328,8 @@ export class RecipeService {
           isOwner: false,
         };
       }
-      console.error("Błąd podczas sprawdzania własności przepisu:", error);
-      throw new Error("Nie udało się sprawdzić własności przepisu");
+      console.error("Error checking recipe ownership:", error);
+      throw new Error("Failed to check recipe ownership");
     }
 
     const isOwner = recipe.user_id === userId;
@@ -341,28 +341,28 @@ export class RecipeService {
     };
 
     if (!isOwner) {
-      throw new Error("Brak uprawnień do tego przepisu");
+      throw new Error("No permissions to this recipe");
     }
 
     return result;
   }
 
   /**
-   * Waliduje czy podane tag_ids istnieją w bazie
+   * Validates if the provided tag_ids exist in the database
    */
   private async validateTagIds(tagIds: string[]): Promise<void> {
     const { data: tags, error } = await this.supabase.from("tags").select("id").in("id", tagIds).eq("is_active", true);
 
     if (error) {
-      console.error("Błąd podczas walidacji tagów:", error);
-      throw new Error("Nie udało się zwalidować tagów");
+      console.error("Error validating tags:", error);
+      throw new Error("Failed to validate tags");
     }
 
     const existingTagIds = tags?.map((tag) => tag.id) || [];
     const missingTagIds = tagIds.filter((id) => !existingTagIds.includes(id));
 
     if (missingTagIds.length > 0) {
-      throw new Error(`Nieistniejące tagi: ${missingTagIds.join(", ")}`);
+      throw new Error(`Non-existent tags: ${missingTagIds.join(", ")}`);
     }
   }
 }

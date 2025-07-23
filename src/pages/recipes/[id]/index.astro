@@ -5,14 +5,14 @@ import { RecipeService } from "../../../lib/services/recipe.service";
 
 export const prerender = false;
 
-// Pobieranie ID z parametrów URL
+// get ID from URL parameters
 const { id } = Astro.params;
 
 if (!id) {
   return Astro.redirect("/recipes");
 }
 
-// Sprawdzenie autentifikacji
+// check authentication
 const { user } = Astro.locals;
 const userId = user?.id;
 
@@ -20,7 +20,7 @@ if (!userId) {
   return Astro.redirect("/auth/login");
 }
 
-// Pobieranie szczegółów przepisu
+// fetch recipe details
 let recipe: RecipeDetailDTO | null = null;
 let error: string | null = null;
 
@@ -30,7 +30,7 @@ try {
 
   recipe = await recipeService.getRecipeDetails(id, userId);
 } catch (e) {
-  console.error("Błąd podczas pobierania przepisu:", e);
+  console.error("Error fetching recipe:", e);
 
   if (e instanceof Error) {
     if (e.message.includes("nie został znaleziony") || e.message.includes("Brak uprawnień")) {
@@ -44,7 +44,7 @@ try {
 ---
 
 <AppLayout title={recipe?.name ? `${recipe.name} - AI RecipeKeeper` : "Przepis - AI RecipeKeeper"}>
-  {/* Nagłówek z nawigacją */}
+  {/* header with navigation */}
   <header class="bg-surface border-b border-border -mx-4 lg:-mx-6">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <nav class="flex items-center justify-between">
@@ -98,7 +98,7 @@ try {
         </div>
       ) : recipe ? (
         <article class="bg-card/95 backdrop-blur-sm rounded-xl shadow-lg border border-border/50 overflow-hidden">
-          {/* Zdjęcie przepisu */}
+          {/* recipe image */}
           {recipe.image_url && (
             <div class="aspect-w-16 aspect-h-9 bg-muted">
               <img src={recipe.image_url} alt={recipe.name} class="w-full h-64 object-cover" loading="lazy" />
@@ -106,11 +106,11 @@ try {
           )}
 
           <div class="p-6 sm:p-8">
-            {/* Nagłówek przepisu */}
+            {/* recipe header */}
             <header class="mb-6">
               <h1 class="text-3xl font-bold text-foreground mb-4">{recipe.name}</h1>
 
-              {/* Metadane */}
+              {/* metadata */}
               <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {recipe.preparation_time && (
                   <div class="flex items-center">
@@ -139,7 +139,7 @@ try {
                 </div>
               </div>
 
-              {/* Tagi */}
+              {/* tags */}
               {recipe.tags.length > 0 && (
                 <div class="mt-4">
                   <div class="flex flex-wrap gap-2">
@@ -153,7 +153,7 @@ try {
               )}
             </header>
 
-            {/* Składniki */}
+            {/* ingredients */}
             <section class="mb-8">
               <h2 class="text-xl font-semibold text-foreground mb-4">Składniki</h2>
               <ul class="space-y-3">
@@ -166,7 +166,7 @@ try {
               </ul>
             </section>
 
-            {/* Kroki przygotowania */}
+            {/* steps */}
             <section class="mb-8">
               <h2 class="text-xl font-semibold text-foreground mb-4">Sposób przygotowania</h2>
               <ol class="space-y-4">
@@ -181,7 +181,7 @@ try {
               </ol>
             </section>
 
-            {/* Notatki */}
+            {/* notes */}
             {recipe.notes && (
               <section class="mb-8">
                 <h2 class="text-xl font-semibold text-foreground mb-4">Notatki</h2>
@@ -191,7 +191,7 @@ try {
               </section>
             )}
 
-            {/* Źródło */}
+            {/* source */}
             {recipe.source_url && (
               <section>
                 <h2 class="text-xl font-semibold text-foreground mb-4">Źródło</h2>

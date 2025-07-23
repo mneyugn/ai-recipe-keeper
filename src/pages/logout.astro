@@ -1,15 +1,15 @@
 ---
 import { createSupabaseServerInstance } from "../db/supabase.client";
 
-// Server-side logout - wyczyść sesję Supabase
+// server-side logout - clear Supabase session
 const supabase = createSupabaseServerInstance({
   cookies: Astro.cookies,
   headers: Astro.request.headers,
 });
 
-// Wywołaj logout aby wyczyścić sesję
+// clear session
 await supabase.auth.signOut();
 
-// Przekieruj do strony logowania
+// redirect to login page
 return Astro.redirect("/auth/login");
 ---

@@ -1,7 +1,8 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { POST } from "../register";
+import { ApiError } from "../../../../lib/errors";
 
-// Mock dependencies
+// mock dependencies
 vi.mock("../../../../db/supabase.client", () => ({
   createSupabaseServerInstance: vi.fn(),
 }));
@@ -44,7 +45,7 @@ describe("POST /api/auth/register", () => {
     };
   });
 
-  test("pomyślnie rejestruje nowego użytkownika z automatycznym logowaniem", async () => {
+  test("successfully registers a new user with auto-login", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -83,7 +84,7 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
       },
       redirectTo: "/recipes",
-      message: "Konto zostało utworzone pomyślnie",
+      message: "Account created successfully.",
     });
     expect(mockRegisterSchema.safeParse).toHaveBeenCalledWith(registerData);
     expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
@@ -92,7 +93,7 @@ describe("POST /api/auth/register", () => {
     });
   });
 
-  test("pomyślnie rejestruje użytkownika z koniecznością potwierdzenia email", async () => {
+  test("successfully registers a user who needs to confirm their email", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -105,7 +106,7 @@ describe("POST /api/auth/register", () => {
         id: "user-123",
         email: "test@example.com",
       },
-      session: null, // Brak sesji oznacza konieczność potwierdzenia email
+      session: null, // No session means email confirmation is needed
     };
 
     mockContext.request.json.mockResolvedValue(registerData);
@@ -126,7 +127,7 @@ describe("POST /api/auth/register", () => {
     expect(response.status).toBe(200);
     expect(result).toEqual({
       success: true,
-      message: "Sprawdź swoją skrzynkę email i potwierdź adres, aby dokończyć rejestrację",
+      message: "Please check your inbox and confirm your email address to complete registration.",
       redirectTo: "/auth/login",
       user: {
         id: "user-123",
@@ -135,7 +136,7 @@ describe("POST /api/auth/register", () => {
     });
   });
 
-  test("zwraca błąd walidacji dla nieprawidłowych danych", async () => {
+  test("throws a validation error for invalid data", async () => {
     // Arrange
     const invalidData = {
       email: "invalid-email",
@@ -147,24 +148,19 @@ describe("POST /api/auth/register", () => {
     const zodError = {
       success: false as const,
       error: {
-        errors: [{ message: "Nieprawidłowy format email" }, { message: "Hasła muszą być identyczne" }],
+        errors: [{ message: "Invalid email format" }, { message: "Passwords must match" }],
       },
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockRegisterSchema.safeParse.mockReturnValue(zodError as any);
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nieprawidłowy format email, Hasła muszą być identyczne",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Invalid email format, Passwords must match", "VALIDATION_ERROR")
+    );
   });
 
-  test("zwraca błąd dla zajętego adresu email", async () => {
+  test("throws an error for an existing email", async () => {
     // Arrange
     const registerData = {
       email: "existing@example.com",
@@ -182,18 +178,13 @@ describe("POST /api/auth/register", () => {
       error: { message: "User already registered" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Użytkownik z tym adresem email już istnieje",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "A user with this email address already exists.", "USER_ALREADY_EXISTS")
+    );
   });
 
-  test("zwraca błąd dla zbyt krótkiego hasła", async () => {
+  test("throws an error for a password that is too short", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -211,18 +202,13 @@ describe("POST /api/auth/register", () => {
       error: { message: "Password should be at least 6 characters" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Hasło musi mieć co najmniej 6 znaków",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Password must be at least 6 characters long.", "PASSWORD_TOO_SHORT")
+    );
   });
 
-  test("zwraca błąd dla nieprawidłowego formatu emaila", async () => {
+  test("throws an error for an invalid email format", async () => {
     // Arrange
     const registerData = {
       email: "invalid-email",
@@ -240,18 +226,13 @@ describe("POST /api/auth/register", () => {
       error: { message: "Unable to validate email address" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nieprawidłowy format adresu email",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Invalid email address format.", "INVALID_EMAIL")
+    );
   });
 
-  test("zwraca błąd gdy rejestracja jest wyłączona", async () => {
+  test("throws an error when registration is disabled", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -269,18 +250,13 @@ describe("POST /api/auth/register", () => {
       error: { message: "Signup is disabled" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Rejestracja jest obecnie wyłączona",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Registration is currently disabled.", "SIGNUP_DISABLED")
+    );
   });
 
-  test("zwraca błąd gdy nie ma danych użytkownika", async () => {
+  test("throws an error when user data is not returned", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -298,33 +274,21 @@ describe("POST /api/auth/register", () => {
       error: null,
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nie udało się utworzyć konta",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Could not create account.", "ACCOUNT_CREATION_FAILED")
+    );
   });
 
-  test("zwraca błąd serwera dla nieoczekiwanych błędów", async () => {
+  test("propagates unexpected errors", async () => {
     // Arrange
     mockContext.request.json.mockRejectedValue(new Error("Unexpected error"));
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(500);
-    expect(result).toEqual({
-      error: "Wystąpił błąd serwera",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow("Unexpected error");
   });
 
-  test("zwraca domyślny błąd Supabase dla nieznanych błędów", async () => {
+  test("throws a generic error for unknown Supabase errors", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -342,18 +306,13 @@ describe("POST /api/auth/register", () => {
       error: { message: "Unknown Supabase error" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Wystąpił błąd podczas rejestracji",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "An error occurred during registration.", "REGISTRATION_FAILED")
+    );
   });
 
-  test("wywołuje createSupabaseServerInstance z poprawnymi parametrami", async () => {
+  test("calls createSupabaseServerInstance with correct parameters", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",
@@ -384,7 +343,7 @@ describe("POST /api/auth/register", () => {
     });
   });
 
-  test("nie przekazuje confirmPassword do Supabase", async () => {
+  test("does not pass confirmPassword to Supabase", async () => {
     // Arrange
     const registerData = {
       email: "test@example.com",

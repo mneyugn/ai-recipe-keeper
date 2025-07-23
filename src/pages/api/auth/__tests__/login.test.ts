@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { POST } from "../login";
+import { ApiError } from "../../../../lib/errors";
 
 // Mock dependencies
 vi.mock("../../../../db/supabase.client", () => ({
@@ -44,7 +45,7 @@ describe("POST /api/auth/login", () => {
     };
   });
 
-  test("pomyślnie loguje użytkownika z poprawnymi danymi", async () => {
+  test("successfully logs in a user with correct credentials", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -90,7 +91,7 @@ describe("POST /api/auth/login", () => {
     });
   });
 
-  test("zwraca błąd walidacji dla nieprawidłowych danych", async () => {
+  test("throws validation error for invalid data", async () => {
     // Arrange
     const invalidData = {
       email: "invalid-email",
@@ -98,28 +99,23 @@ describe("POST /api/auth/login", () => {
     };
 
     const zodError = {
-      success: false,
+      success: false as const,
       error: {
-        errors: [{ message: "Nieprawidłowy format email" }, { message: "Hasło jest wymagane" }],
+        errors: [{ message: "Invalid email format" }, { message: "Password is required" }],
       },
     };
 
     mockContext.request.json.mockResolvedValue(invalidData);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockLoginSchema.safeParse.mockReturnValue(zodError as any);
+    // @ts-expect-error - mockLoginSchema is mocked
+    mockLoginSchema.safeParse.mockReturnValue(zodError);
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nieprawidłowy format email, Hasło jest wymagane",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Invalid email format, Password is required", "VALIDATION_ERROR")
+    );
   });
 
-  test("zwraca błąd dla nieprawidłowych danych logowania", async () => {
+  test("throws an error for invalid login credentials", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -136,18 +132,13 @@ describe("POST /api/auth/login", () => {
       error: { message: "Invalid login credentials" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nieprawidłowy email lub hasło",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Invalid email or password.", "INVALID_CREDENTIALS")
+    );
   });
 
-  test("zwraca błąd dla niepotwierdzonego emaila", async () => {
+  test("throws an error for an unconfirmed email", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -164,18 +155,13 @@ describe("POST /api/auth/login", () => {
       error: { message: "Email not confirmed" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Potwierdź swój adres email przed logowaniem",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Please confirm your email address before logging in.", "EMAIL_NOT_CONFIRMED")
+    );
   });
 
-  test("zwraca błąd dla zbyt wielu prób logowania", async () => {
+  test("throws an error for too many login attempts", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -192,18 +178,13 @@ describe("POST /api/auth/login", () => {
       error: { message: "Too many requests" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Zbyt wiele prób logowania. Spróbuj ponownie później",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Too many login attempts. Please try again later.", "TOO_MANY_REQUESTS")
+    );
   });
 
-  test("zwraca błąd gdy nie ma danych użytkownika", async () => {
+  test("throws an error when user data is not returned", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -220,33 +201,21 @@ describe("POST /api/auth/login", () => {
       error: null,
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Nie udało się zalogować",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "Login failed. User data not found.", "LOGIN_FAILED")
+    );
   });
 
-  test("zwraca błąd serwera dla nieoczekiwanych błędów", async () => {
+  test("propagates unexpected errors", async () => {
     // Arrange
     mockContext.request.json.mockRejectedValue(new Error("Unexpected error"));
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(500);
-    expect(result).toEqual({
-      error: "Wystąpił błąd serwera",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow("Unexpected error");
   });
 
-  test("zwraca domyślny błąd Supabase dla nieznanych błędów", async () => {
+  test("throws a generic error for unknown Supabase errors", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",
@@ -263,18 +232,13 @@ describe("POST /api/auth/login", () => {
       error: { message: "Unknown Supabase error" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Wystąpił błąd podczas logowania",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "An error occurred during login.", "LOGIN_FAILED")
+    );
   });
 
-  test("wywołuje createSupabaseServerInstance z poprawnymi parametrami", async () => {
+  test("calls createSupabaseServerInstance with correct parameters", async () => {
     // Arrange
     const loginData = {
       email: "test@example.com",

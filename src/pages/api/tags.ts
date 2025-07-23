@@ -1,18 +1,19 @@
 import type { APIRoute } from "astro";
 import { TagService } from "../../lib/services/tag.service";
-import type { TagListResponseDTO, ErrorResponseDTO } from "../../types";
+import type { TagListResponseDTO } from "../../types";
+import { ApiError } from "../../lib/errors";
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    // Inicjalizacja TagService z klientem Supabase z context.locals
+    // initialize TagService with Supabase client from context.locals
     const tagService = new TagService(locals.supabase);
 
-    // Pobranie aktywnych tagów
+    // fetch active tags
     const tags = await tagService.getActiveTags();
 
-    // Przygotowanie odpowiedzi
+    // prepare response
     const response: TagListResponseDTO = {
       tags,
     };
@@ -25,19 +26,6 @@ export const GET: APIRoute = async ({ locals }) => {
     });
   } catch (error) {
     console.error("GET /api/tags: Error occurred:", error);
-
-    const errorResponse: ErrorResponseDTO = {
-      error: {
-        code: "DATABASE_ERROR",
-        message: "Nie udało się pobrać tagów. Spróbuj ponownie później.",
-      },
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    throw new ApiError(500, "Failed to fetch tags. Please try again later.", "DATABASE_ERROR");
   }
 };

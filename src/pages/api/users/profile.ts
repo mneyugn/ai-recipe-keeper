@@ -1,116 +1,42 @@
 import type { APIRoute } from "astro";
 import { UserService } from "../../../lib/services/user.service";
-import type { UserProfileDTO, ErrorResponseDTO } from "../../../types";
+import { ApiError } from "../../../lib/errors";
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    // Sprawdzenie autentyfikacji
+    // check authentication
     const userId = locals.user?.id;
 
     if (!userId) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Wymagana autentyfikacja",
-          },
-        } satisfies ErrorResponseDTO),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      throw new ApiError(401, "Authentication required.", "UNAUTHORIZED");
     }
 
-    // Sprawdzenie czy Supabase client jest dostępny w locals
     if (!locals.supabase) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Wystąpił błąd serwera",
-          },
-        } satisfies ErrorResponseDTO),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      throw new ApiError(500, "Server configuration error.", "INTERNAL_SERVER_ERROR");
     }
 
-    // Utworzenie instancji UserService
     const userService = new UserService(locals.supabase);
-
-    // Pobranie profilu użytkownika
     const userProfile = await userService.getUserProfile(userId);
 
-    // Zwrócenie sukcesu
-    return new Response(JSON.stringify(userProfile satisfies UserProfileDTO), {
+    return new Response(JSON.stringify(userProfile), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
       },
     });
   } catch (error) {
-    console.error("Błąd w GET /api/users/profile:", error);
-
-    // Obsługa różnych typów błędów
-    if (error instanceof Error) {
-      if (error.message.includes("nie został znaleziony")) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "UNAUTHORIZED",
-              message: "Użytkownik nie został znaleziony",
-            },
-          } satisfies ErrorResponseDTO),
-          {
-            status: 401,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      if (error.message.includes("Błąd pobierania danych użytkownika")) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Wystąpił błąd serwera",
-            },
-          } satisfies ErrorResponseDTO),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
-    // Domyślna obsługa błędów
-    return new Response(
-      JSON.stringify({
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Wystąpił błąd serwera",
-        },
-      } satisfies ErrorResponseDTO),
-      {
-        status: 500,
+    if (error instanceof ApiError) {
+      return new Response(JSON.stringify({ error: { code: error.errorCode, message: error.message } }), {
+        status: error.statusCode,
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    );
+      });
+    }
+
+    console.error("Error in GET /api/users/profile:", error);
+    throw new ApiError(500, "Internal server error.", "INTERNAL_SERVER_ERROR");
   }
 };

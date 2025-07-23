@@ -1,65 +1,9 @@
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import { supabaseClient } from "../../db/supabase.client";
+import type { SupabaseClient } from "../../db/supabase.client";
 import type { Database, Json } from "../../db/database.types";
-import { OpenRouterService } from "../openrouter.service";
+import { OpenRouterService } from "./openrouter.service";
 import type { ChatCompletionRequest, ResponseFormat } from "../../types";
-
-/**
- * JSON Schema for AI response - extracted recipe data
- */
-const RECIPE_EXTRACTION_SCHEMA = {
-  type: "object",
-  properties: {
-    name: {
-      type: "string",
-      description: "Recipe name in Polish (EXACTLY this field name: 'name')",
-    },
-    ingredients: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description:
-        "List of ingredients, each as separate string with quantity and unit (EXACTLY this field name: 'ingredients')",
-    },
-    steps: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description: "List of preparation steps, each as separate string (EXACTLY this field name: 'steps')",
-    },
-    preparation_time: {
-      type: "string",
-      description: "Preparation time as string (EXACTLY this field name: 'preparation_time')",
-    },
-    suggested_tags: {
-      type: "array",
-      items: {
-        type: "string",
-        enum: [
-          "obiad",
-          "śniadanie",
-          "kolacja",
-          "deser",
-          "ciasto",
-          "zupa",
-          "makaron",
-          "mięso",
-          "ryby",
-          "wegetariańskie",
-          "wegańskie",
-          "latwe",
-          "szybkie",
-          "trudne",
-        ],
-      },
-      description: "Suggested tags from allowed list only (EXACTLY this field name: 'suggested_tags')",
-    },
-  },
-  required: ["name", "ingredients", "steps", "suggested_tags"],
-  additionalProperties: false,
-};
+import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "../validations/recipe.validation";
 
 /**
  * System prompt for recipe extraction from text
@@ -87,10 +31,11 @@ Return JSON response following the schema EXACTLY.`;
  * Includes rate limiting and database logging functionality
  */
 export class RecipeExtractionService {
-  constructor(private openRouterService: OpenRouterService) {}
+  constructor(public openRouterService: OpenRouterService) {}
 
   /**
    * Logs extraction attempt to database
+   * @param supabase - The Supabase client instance from context
    * @param userId - UUID of the user
    * @param inputText - original text that was processed
    * @param extractedData - result of extraction (null if failed)
@@ -100,6 +45,7 @@ export class RecipeExtractionService {
    * @returns Promise<string> - UUID of created log entry
    */
   async logExtractionAttempt(
+    supabase: SupabaseClient,
     userId: string,
     inputText: string,
     extractedData: ExtractedRecipeDataDTO | null = null,
@@ -118,7 +64,7 @@ export class RecipeExtractionService {
         generation_duration: generationDuration,
       };
 
-      const { data, error } = await supabaseClient.from("extraction_logs").insert(logEntry).select("id").single();
+      const { data, error } = await supabase.from("extraction_logs").insert(logEntry).select("id").single();
 
       if (error) {
         console.error("Error inserting extraction log:", error);
@@ -134,12 +80,13 @@ export class RecipeExtractionService {
 
   /**
    * Checks if user has not exceeded daily extraction limit (100/day)
+   * @param supabase - The Supabase client instance from context
    * @param userId - UUID of the user to check
    * @returns Promise<boolean> - true if under limit, false if exceeded
    */
-  async checkDailyLimit(userId: string): Promise<boolean> {
+  async checkDailyLimit(supabase: SupabaseClient, userId: string): Promise<boolean> {
     try {
-      const { data, error } = await supabaseClient.rpc("check_extraction_limit", {
+      const { data, error } = await supabase.rpc("check_extraction_limit", {
         p_user_id: userId,
       });
 
@@ -157,12 +104,13 @@ export class RecipeExtractionService {
 
   /**
    * Increments the daily extraction counter for user
+   * @param supabase - The Supabase client instance from context
    * @param userId - UUID of the user
    * @returns Promise<void>
    */
-  async incrementDailyCount(userId: string): Promise<void> {
+  async incrementDailyCount(supabase: SupabaseClient, userId: string): Promise<void> {
     try {
-      const { error } = await supabaseClient.rpc("increment_extraction_count", {
+      const { error } = await supabase.rpc("increment_extraction_count", {
         p_user_id: userId,
       });
 
@@ -206,7 +154,7 @@ export class RecipeExtractionService {
 
       const assistantMessage = response.choices[0]?.message?.content;
       if (!assistantMessage) {
-        throw new Error("Brak odpowiedzi od modelu AI");
+        throw new Error("No response from AI model");
       }
 
       let extractedData: ExtractedRecipeDataDTO;
@@ -214,11 +162,11 @@ export class RecipeExtractionService {
         extractedData = JSON.parse(assistantMessage);
       } catch (parseError) {
         throw new Error(
-          `Nieprawidłowy format odpowiedzi JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+          `Invalid JSON response format: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
         );
       }
 
-      const validationResult = this.validateExtractedData(extractedData);
+      const validationResult = validateExtractedData(extractedData);
 
       return validationResult;
     } catch (error) {
@@ -227,146 +175,5 @@ export class RecipeExtractionService {
       // throw error to endpoint to handle it properly
       throw error;
     }
-  }
-
-  /**
-   * Validate extracted recipe data and return data with warnings
-   * @private
-   */
-  private validateExtractedData(data: unknown): ExtractionValidationResult {
-    const warnings: string[] = [];
-    let hasErrors = false;
-
-    if (!data || typeof data !== "object") {
-      hasErrors = true;
-      warnings.push("Otrzymano nieprawidłowe dane z AI - spróbuj ponownie z innym tekstem");
-      return {
-        data: this.getDefaultRecipeData(),
-        warnings,
-        hasErrors,
-      };
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    const result: ExtractedRecipeDataDTO = {
-      name: "",
-      ingredients: [],
-      steps: [],
-      preparation_time: undefined,
-      suggested_tags: [],
-    };
-
-    // validate name
-    if (!obj.name || typeof obj.name !== "string" || obj.name.trim().length === 0) {
-      warnings.push("W przepisie nie wykryto nazwy - uzupełnij ją samodzielnie");
-      result.name = "Nowy przepis";
-    } else {
-      result.name = obj.name.trim();
-    }
-
-    if (!Array.isArray(obj.ingredients) || obj.ingredients.length === 0) {
-      warnings.push("Nie wykryto składników - dodaj je samodzielnie");
-      hasErrors = true;
-    } else {
-      const validIngredients: string[] = [];
-      for (const ingredient of obj.ingredients) {
-        if (typeof ingredient === "string" && ingredient.trim().length > 0) {
-          validIngredients.push(ingredient.trim());
-        }
-      }
-
-      if (validIngredients.length === 0) {
-        warnings.push("Wykryte składniki były puste - dodaj je samodzielnie");
-        hasErrors = true;
-      } else if (validIngredients.length < obj.ingredients.length) {
-        warnings.push("Część składników była nieprawidłowa i została pominięta");
-      }
-
-      result.ingredients = validIngredients;
-    }
-
-    // validate steps
-    if (!Array.isArray(obj.steps) || obj.steps.length === 0) {
-      warnings.push("Nie wykryto kroków przygotowania - dodaj je samodzielnie");
-      hasErrors = true;
-    } else {
-      const validSteps: string[] = [];
-      for (const step of obj.steps) {
-        if (typeof step === "string" && step.trim().length > 0) {
-          validSteps.push(step.trim());
-        }
-      }
-
-      if (validSteps.length === 0) {
-        warnings.push("Wykryte kroki były puste - dodaj je samodzielnie");
-        hasErrors = true;
-      } else if (validSteps.length < obj.steps.length) {
-        warnings.push("Część kroków była nieprawidłowa i została pominięta");
-      }
-
-      result.steps = validSteps;
-    }
-
-    // validate preparation time
-    if (obj.preparation_time && typeof obj.preparation_time === "string" && obj.preparation_time.trim().length > 0) {
-      result.preparation_time = obj.preparation_time.trim();
-    }
-
-    // validate tags
-    const allowedTags = [
-      "obiad",
-      "śniadanie",
-      "kolacja",
-      "deser",
-      "ciasto",
-      "zupa",
-      "makaron",
-      "mięso",
-      "ryby",
-      "wegetariańskie",
-      "wegańskie",
-      "latwe",
-      "szybkie",
-      "trudne",
-    ];
-
-    if (Array.isArray(obj.suggested_tags)) {
-      const validTags: string[] = [];
-      const invalidTags: string[] = [];
-
-      for (const tag of obj.suggested_tags) {
-        if (typeof tag === "string" && allowedTags.includes(tag)) {
-          validTags.push(tag);
-        } else if (typeof tag === "string") {
-          invalidTags.push(tag);
-        }
-      }
-
-      result.suggested_tags = validTags;
-
-      if (invalidTags.length > 0) {
-        warnings.push(`Nieprawidłowe tagi zostały pominięte: ${invalidTags.join(", ")}`);
-      }
-    }
-
-    return {
-      data: result,
-      warnings,
-      hasErrors,
-    };
-  }
-
-  /**
-   * Returns default recipe data in case of critical error
-   * @private
-   */
-  private getDefaultRecipeData(): ExtractedRecipeDataDTO {
-    return {
-      name: "Nowy przepis",
-      ingredients: [],
-      steps: [],
-      suggested_tags: [],
-    };
   }
 }

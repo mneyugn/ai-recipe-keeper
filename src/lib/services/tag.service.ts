@@ -5,8 +5,8 @@ export class TagService {
   constructor(private supabase: SupabaseClient) {}
 
   /**
-   * Pobiera wszystkie aktywne tagi z bazy danych
-   * @returns Lista aktywnych tagów posortowana alfabetycznie
+   * Fetches all active tags from the database
+   * @returns List of active tags sorted alphabetically
    */
   async getActiveTags(): Promise<TagDTO[]> {
     try {
@@ -18,13 +18,13 @@ export class TagService {
 
       if (error) {
         console.error("TagService.getActiveTags: Database error:", error);
-        throw new Error("Nie udało się pobrać tagów z bazy danych");
+        throw new Error("Failed to fetch tags from the database");
       }
 
       return data || [];
     } catch (error) {
       console.error("TagService.getActiveTags: Unexpected error:", error);
-      throw error instanceof Error ? error : new Error("Nieoczekiwany błąd podczas pobierania tagów");
+      throw error instanceof Error ? error : new Error("Unexpected error while fetching tags");
     }
   }
 }

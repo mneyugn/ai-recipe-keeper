@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { POST } from "../logout";
+import { ApiError } from "../../../../lib/errors";
 
 // Mock dependencies
 vi.mock("../../../../db/supabase.client", () => ({
@@ -35,7 +36,7 @@ describe("POST /api/auth/logout", () => {
     };
   });
 
-  test("pomyślnie wylogowuje użytkownika", async () => {
+  test("successfully logs out a user", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: null,
@@ -49,46 +50,33 @@ describe("POST /api/auth/logout", () => {
     expect(response.status).toBe(200);
     expect(result).toEqual({
       success: true,
-      message: "Zostałeś wylogowany",
+      message: "You have been logged out.",
       redirectTo: "/auth/login",
     });
     expect(mockSupabase.auth.signOut).toHaveBeenCalledTimes(1);
   });
 
-  test("zwraca błąd gdy wylogowanie się nie powiedzie", async () => {
+  test("throws an error when logout fails", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: { message: "Logout failed" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(result).toEqual({
-      error: "Wystąpił błąd podczas wylogowania",
-    });
-    expect(mockSupabase.auth.signOut).toHaveBeenCalledTimes(1);
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(
+      new ApiError(400, "An error occurred during logout.", "LOGOUT_FAILED")
+    );
   });
 
-  test("zwraca błąd serwera dla nieoczekiwanych błędów", async () => {
+  test("propagates unexpected errors", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockRejectedValue(new Error("Unexpected error"));
 
-    // Act
-    const response = await POST(mockContext);
-    const result = await response.json();
-
-    // Assert
-    expect(response.status).toBe(500);
-    expect(result).toEqual({
-      error: "Wystąpił błąd serwera",
-    });
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow("Unexpected error");
   });
 
-  test("wywołuje createSupabaseServerInstance z poprawnymi parametrami", async () => {
+  test("calls createSupabaseServerInstance with correct parameters", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: null,
@@ -104,7 +92,7 @@ describe("POST /api/auth/logout", () => {
     });
   });
 
-  test("obsługuje przypadek gdy Supabase zwraca null error ale nie signOut poprawnie", async () => {
+  test("handles the case where Supabase returns null error but does not sign out correctly", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: null,
@@ -117,11 +105,11 @@ describe("POST /api/auth/logout", () => {
     // Assert
     expect(response.status).toBe(200);
     expect(result.success).toBe(true);
-    expect(result.message).toBe("Zostałeś wylogowany");
+    expect(result.message).toBe("You have been logged out.");
     expect(result.redirectTo).toBe("/auth/login");
   });
 
-  test("wywołuje signOut bez parametrów", async () => {
+  test("calls signOut without parameters", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: null,
@@ -135,24 +123,29 @@ describe("POST /api/auth/logout", () => {
     expect(mockSupabase.auth.signOut).toHaveBeenCalledTimes(1);
   });
 
-  test("loguje błędy do konsoli", async () => {
+  test("logs errors to the console", async () => {
     // Arrange
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {
+      // do nothing
+    });
     const error = new Error("Test error");
-    mockSupabase.auth.signOut.mockRejectedValue(error);
+    mockSupabase.auth.signOut.mockResolvedValue({ error });
 
     // Act
-    await POST(mockContext);
+    try {
+      await POST(mockContext);
+    } catch {
+      // Expected to throw
+    }
 
     // Assert
-    expect(consoleSpy).toHaveBeenCalledWith("Logout API error:", error);
+    expect(consoleSpy).toHaveBeenCalledWith("Logout error:", error);
 
     // Cleanup
     consoleSpy.mockRestore();
   });
 
-  test("zwraca poprawne nagłówki Content-Type", async () => {
+  test("returns correct Content-Type headers", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: null,
@@ -165,29 +158,21 @@ describe("POST /api/auth/logout", () => {
     expect(response.headers.get("Content-Type")).toBe("application/json");
   });
 
-  test("zwraca błąd z poprawnym nagłówkiem dla błędów wylogowania", async () => {
+  test("returns correct headers for logout errors", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockResolvedValue({
       error: { message: "Some logout error" },
     });
 
-    // Act
-    const response = await POST(mockContext);
-
-    // Assert
-    expect(response.status).toBe(400);
-    expect(response.headers.get("Content-Type")).toBe("application/json");
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow(ApiError);
   });
 
-  test("zwraca błąd serwera z poprawnym nagłówkiem dla wyjątków", async () => {
+  test("returns correct headers for exceptions", async () => {
     // Arrange
     mockSupabase.auth.signOut.mockRejectedValue(new Error("Server error"));
 
-    // Act
-    const response = await POST(mockContext);
-
-    // Assert
-    expect(response.status).toBe(500);
-    expect(response.headers.get("Content-Type")).toBe("application/json");
+    // Act & Assert
+    await expect(POST(mockContext)).rejects.toThrow("Server error");
   });
 });

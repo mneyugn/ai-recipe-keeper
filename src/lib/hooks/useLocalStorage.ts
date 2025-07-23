@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 
 /**
- * Custom hook do zarządzania localStorage z type safety i obsługą SSR
- * @param key - klucz w localStorage
- * @param defaultValue - wartość domyślna
- * @returns [value, setValue] - podobnie jak useState
+ * Custom hook to manage localStorage with type safety and SSR support
+ * @param key - localStorage key
+ * @param defaultValue - default value
+ * @returns [value, setValue] - similar to useState
  */
 export function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T) => void] {
-  // Stan inicjalizowany wartością domyślną
+  // state initialized with default value
   const [value, setValue] = useState<T>(() => {
-    // Sprawdzenie czy jesteśmy w przeglądarce (nie SSR)
+    // check if we are in the browser (not SSR)
     if (typeof window === "undefined") {
       return defaultValue;
     }
@@ -26,7 +26,7 @@ export function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T)
     }
   });
 
-  // Efekt do zapisywania zmian w localStorage
+  // effect to save changes to localStorage
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -43,8 +43,8 @@ export function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T)
 }
 
 /**
- * Konfiguracja kluczy localStorage używanych w aplikacji
- * Centralne miejsce dla wszystkich kluczy localStorage
+ * Configuration of localStorage keys used in the application
+ * Central place for all localStorage keys
  */
 export const LOCAL_STORAGE_KEYS = {
   RECIPE_VIEW_TYPE: "recipe-view-type",
@@ -54,8 +54,8 @@ export const LOCAL_STORAGE_KEYS = {
 } as const;
 
 /**
- * Hook specyficzny dla trybu widoku przepisów
- * Używa type-safe enum i domyślne wartości
+ * Hook specific for recipe view mode
+ * Uses type-safe enum and default values
  */
 export function useRecipeViewType() {
   type ViewType = "grid" | "list";

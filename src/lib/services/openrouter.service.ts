@@ -6,88 +6,81 @@ import type {
   Message,
   ResponseFormat,
   RetryConfig,
-} from "../types";
+} from "../../types";
+import { ApiError } from "../errors";
 
 /**
- * Serwis do komunikacji z OpenRouter API
- * Zapewnia bezpieczną komunikację, obsługę błędów i retry logic
+ * Service for communication with OpenRouter API
+ * Provides secure communication, error handling and retry logic
  */
 export class OpenRouterService {
-  // Pola prywatne
   private apiKey: string;
   private baseUrl: string;
   private httpClient!: AxiosInstance;
   private timeout: number;
   private retryConfig: RetryConfig;
 
-  // Pola publiczne
   public defaultModel: string;
   public isConnected = false;
   public supportedFormats: string[] = ["json_schema"];
 
   constructor(config: OpenRouterConfig) {
-    // Walidacja wymaganych parametrów
     if (!config.apiKey) {
-      throw new Error("Klucz API jest wymagany");
+      throw new ApiError(500, "API key is required for OpenRouterService", "CONFIG_ERROR");
     }
 
     if (!config.apiKey.startsWith("sk-or-")) {
-      throw new Error("Nieprawidłowy format klucza API OpenRouter");
+      throw new ApiError(500, "Invalid OpenRouter API key format", "CONFIG_ERROR");
     }
 
-    // Inicjalizacja pól
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || "https://openrouter.ai/api/v1";
     this.defaultModel = config.defaultModel || "google/gemini-2.0-flash-exp:free";
     this.timeout = config.timeout || 30000;
 
-    // Konfiguracja retry logic
     this.retryConfig = {
       maxRetries: config.maxRetries || 3,
       retryDelay: config.retryDelay || 1000,
       backoffMultiplier: 2,
     };
 
-    // Konfiguracja HTTP Client
     this.setupHttpClient();
   }
 
   /**
-   * Główna metoda do tworzenia odpowiedzi czatu z modelem AI
+   * Main method to create a chat completion with AI model
    */
   async createChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
-    // Walidacja danych wejściowych
+    // validate input
     if (!request.systemMessage && !request.userMessage) {
-      throw new Error("Wymagana jest co najmniej jedna wiadomość");
+      throw new ApiError(400, "At least one message is required", "VALIDATION_ERROR");
     }
 
     if (!request.userMessage.trim()) {
-      throw new Error("Wiadomość użytkownika nie może być pusta");
+      throw new ApiError(400, "User message cannot be empty", "VALIDATION_ERROR");
     }
 
-    // Sanityzacja danych wejściowych
+    // sanitize input
     const sanitizedRequest = {
       ...request,
       systemMessage: this.sanitizeInput(request.systemMessage || ""),
       userMessage: this.sanitizeInput(request.userMessage),
     };
 
-    // Walidacja response format jeśli podany
     if (sanitizedRequest.responseFormat && !this.validateResponseFormat(sanitizedRequest.responseFormat)) {
-      throw new Error("Nieprawidłowy format odpowiedzi");
+      throw new ApiError(400, "Invalid response format", "VALIDATION_ERROR");
     }
 
-    // Formatowanie wiadomości
     const messages = this.formatMessages(sanitizedRequest.systemMessage, sanitizedRequest.userMessage);
 
-    // Przygotowanie requestu do API
+    // prepare request for API
     const apiRequest: Record<string, unknown> = {
       model: sanitizedRequest.modelName || this.defaultModel,
       messages,
       ...sanitizedRequest.modelParameters,
     };
 
-    // Dodanie response_format jeśli podany
+    // add response_format if provided
     if (sanitizedRequest.responseFormat) {
       apiRequest.response_format = sanitizedRequest.responseFormat;
     }
@@ -103,7 +96,7 @@ export class OpenRouterService {
   }
 
   /**
-   * Sprawdza dostępność wybranego modelu
+   * Checks if the selected model is available
    */
   async validateModel(modelName: string): Promise<boolean> {
     if (!modelName.trim()) {
@@ -112,8 +105,7 @@ export class OpenRouterService {
 
     try {
       await this.makeRequest("/models", {});
-      // W rzeczywistej implementacji sprawdzilibyśmy, czy model jest na liście
-      // Na potrzeby implementacji zakładamy, że wszystkie modele są dostępne
+      // TODO: check if the model is on the list, for now we assume that all models are available
       return true;
     } catch {
       return false;
@@ -121,18 +113,18 @@ export class OpenRouterService {
   }
 
   /**
-   * Szacuje liczbę tokenów dla podanego tekstu
-   * Prosta estymacja - w rzeczywistości można użyć biblioteki tiktoken
+   * Estimates number of tokens for given text
+   * Simple estimation TODO: use tiktoken library
    */
   estimateTokens(text: string): number {
     if (!text) return 0;
 
-    // Prosta estymacja: ~4 znaki = 1 token dla większości modeli
+    // simple estimation: ~4 characters = 1 token for most models
     return Math.ceil(text.length / 4);
   }
 
   /**
-   * Konfiguruje HTTP Client z interceptorami
+   * Configures HTTP Client with interceptors
    */
   private setupHttpClient(): void {
     this.httpClient = axios.create({
@@ -146,7 +138,7 @@ export class OpenRouterService {
       },
     });
 
-    // Response interceptor dla obsługi błędów
+    // Response interceptor for error handling
     this.httpClient.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -156,10 +148,10 @@ export class OpenRouterService {
   }
 
   /**
-   * Wykonuje zapytanie HTTP z obsługą retry logic
+   * Makes HTTP request with retry logic
    */
   private async makeRequest(endpoint: string, data: unknown): Promise<AxiosResponse> {
-    let lastError: Error = new Error("Nieoczekiwany błąd połączenia");
+    let lastError: Error = new Error("Unexpected connection error");
 
     for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
       try {
@@ -168,17 +160,17 @@ export class OpenRouterService {
       } catch (error) {
         lastError = error as Error;
 
-        // Nie ponawiamy prób dla niektórych błędów
+        // don't retry for some errors
         if (this.shouldNotRetry(error as AxiosError)) {
           throw error;
         }
 
-        // Ostatnia próba - rzucamy błąd
+        // last attempt - throw error
         if (attempt === this.retryConfig.maxRetries) {
           throw error;
         }
 
-        // Czekamy przed następną próbą z exponential backoff
+        // wait before next attempt with exponential backoff
         await this.handleRetry(error as Error, attempt);
       }
     }
@@ -187,18 +179,18 @@ export class OpenRouterService {
   }
 
   /**
-   * Sprawdza czy błąd nie powinien być ponowiony
+   * checks if error should not be retried
    */
   private shouldNotRetry(error: AxiosError): boolean {
     if (!error.response) return false;
 
     const status = error.response.status;
-    // Nie ponawiamy dla błędów autoryzacji, walidacji i niedostępnych modeli
+    // don't retry for auth, validation and unavailable model errors
     return status === 401 || status === 400 || status === 404;
   }
 
   /**
-   * Implementuje exponential backoff dla ponownych prób
+   * exponential backoff for retries
    */
   private async handleRetry(error: Error, attempt: number): Promise<void> {
     const delay = this.retryConfig.retryDelay * Math.pow(this.retryConfig.backoffMultiplier, attempt);
@@ -212,7 +204,7 @@ export class OpenRouterService {
   }
 
   /**
-   * Waliduje poprawność schematu JSON dla response_format
+   * Validates JSON schema for response_format
    */
   private validateResponseFormat(format: ResponseFormat): boolean {
     if (!format || format.type !== "json_schema") {
@@ -223,7 +215,7 @@ export class OpenRouterService {
       return false;
     }
 
-    // Podstawowa walidacja schematu JSON
+    // basic JSON schema validation
     try {
       JSON.stringify(format.json_schema.schema);
       return true;
@@ -233,12 +225,12 @@ export class OpenRouterService {
   }
 
   /**
-   * Formatuje wiadomości zgodnie z wymaganiami OpenRouter API
+   * Formats messages according to OpenRouter API requirements
    */
   private formatMessages(systemMessage: string, userMessage: string): Message[] {
     const messages: Message[] = [];
 
-    // Dodajemy system message jeśli nie jest pusty
+    // add system message if not empty
     if (systemMessage.trim()) {
       messages.push({
         role: "system",
@@ -246,7 +238,7 @@ export class OpenRouterService {
       });
     }
 
-    // Zawsze dodajemy user message
+    // always add user message
     messages.push({
       role: "user",
       content: userMessage.trim(),
@@ -256,7 +248,7 @@ export class OpenRouterService {
   }
 
   /**
-   * Sanityzuje dane wejściowe przed wysłaniem do API
+   * Sanitizes input before sending to API
    */
   private sanitizeInput(input: string): string {
     if (!input) return "";
@@ -264,48 +256,49 @@ export class OpenRouterService {
     return (
       input
         .trim()
-        // Usuwamy potencjalnie niebezpieczne znaki
+        // remove potentially dangerous characters
         // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-        // Ograniczamy długość do rozumnej wartości
+        // limit length to a reasonable value
         .slice(0, 50000)
     );
   }
 
   /**
-   * Obsługuje błędy API z odpowiednimi komunikatami
+   * Handles API errors with appropriate messages
    */
   private handleError(error: AxiosError): never {
     if (error.response) {
       const status = error.response.status;
       const data = error.response.data as { error?: { message?: string } };
+      const errorMessage = data?.error?.message || error.response.statusText;
 
       switch (status) {
         case 401:
-          throw new Error("Nieprawidłowy klucz API OpenRouter");
+          throw new ApiError(401, `OpenRouter authentication error: ${errorMessage}`, "AUTH_ERROR");
         case 429:
-          throw new Error("Przekroczono limit requestów. Spróbuj ponownie za chwilę");
+          throw new ApiError(429, `OpenRouter rate limit exceeded: ${errorMessage}`, "RATE_LIMIT_EXCEEDED");
         case 400:
-          throw new Error(`Nieprawidłowe dane wejściowe: ${data?.error?.message || "Sprawdź format danych"}`);
+          throw new ApiError(400, `OpenRouter invalid request: ${errorMessage}`, "INVALID_REQUEST");
         case 404:
-          throw new Error("Model niedostępny lub nie istnieje");
+          throw new ApiError(404, `OpenRouter model not found: ${errorMessage}`, "NOT_FOUND");
         case 502:
         case 503:
         case 504:
-          throw new Error("Usługa OpenRouter jest czasowo niedostępna");
+          throw new ApiError(status, `OpenRouter service unavailable: ${errorMessage}`, "SERVICE_UNAVAILABLE");
         default:
-          throw new Error(`Błąd API OpenRouter (${status}): ${data?.error?.message || error.response.statusText}`);
+          throw new ApiError(status, `OpenRouter API error (${status}): ${errorMessage}`, "API_ERROR");
       }
     }
 
     if (error.code === "ECONNABORTED") {
-      throw new Error("Przekroczono czas oczekiwania na odpowiedź. Spróbuj ponownie");
+      throw new ApiError(504, "Request to OpenRouter timed out", "TIMEOUT_ERROR");
     }
 
     if (error.code === "ENOTFOUND" || error.code === "ECONNREFUSED") {
-      throw new Error("Brak połączenia z internetem lub usługa OpenRouter jest niedostępna");
+      throw new ApiError(503, "Could not connect to OpenRouter service", "CONNECTION_ERROR");
     }
 
-    throw new Error(`Nieoczekiwany błąd: ${error.message}`);
+    throw new ApiError(500, `Unexpected network error: ${error.message}`, "UNEXPECTED_ERROR");
   }
 }

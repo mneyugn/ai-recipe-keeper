@@ -1,4 +1,4 @@
-// Auth service - API wrapper używany przez komponenty React
+// Auth service - API wrapper used by React components
 import type {
   LoginFormData,
   RegisterFormData,
@@ -28,7 +28,7 @@ async function fetchJson(url: string, data?: unknown): Promise<AuthResponse> {
     });
 
     if (!response.ok && response.status === 401) {
-      // Automatyczne przekierowanie na 401 - sesja wygasła
+      // automatic redirect to 401 - session expired
       window.location.href = "/auth/login";
       throw new Error("Unauthorized");
     }
@@ -38,7 +38,7 @@ async function fetchJson(url: string, data?: unknown): Promise<AuthResponse> {
     if (error instanceof Error && error.message === "Unauthorized") {
       throw error;
     }
-    throw new Error("Błąd połączenia z serwerem");
+    throw new Error("Connection error");
   }
 }
 

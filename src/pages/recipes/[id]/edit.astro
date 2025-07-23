@@ -8,7 +8,7 @@ import { RecipeService } from "@/lib/services/recipe.service";
 
 const { id: recipeId } = Astro.params;
 
-// Sprawdzenie autentyfikacji
+// check authentication
 const { user } = Astro.locals;
 const userId = user?.id;
 

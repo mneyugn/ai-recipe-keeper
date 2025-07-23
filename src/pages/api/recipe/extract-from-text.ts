@@ -1,7 +1,8 @@
 import type { APIRoute } from "astro";
 import { extractFromTextSchema } from "../../../lib/validations/recipe-extraction";
 import { recipeExtractionService } from "../../../lib/services";
-import type { ExtractFromTextResponseDTO, ErrorResponseDTO } from "../../../types";
+import type { ExtractFromTextResponseDTO } from "../../../types";
+import { ApiError } from "../../../lib/errors";
 
 export const prerender = false;
 
@@ -10,258 +11,87 @@ export const prerender = false;
  * Extracts recipe data from unstructured text using AI and returns structured data
  */
 export const POST: APIRoute = async ({ request, locals }) => {
+  // 1. Check authentication
+  const userId = locals.user?.id;
+  if (!userId) {
+    throw new ApiError(401, "Authentication required.", "AUTH_REQUIRED");
+  }
+
+  // 2. Validate Content-Type
+  const contentType = request.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    throw new ApiError(400, "Content-Type must be application/json.", "INVALID_CONTENT_TYPE");
+  }
+
+  // 3. Parse JSON
+  let requestBody;
   try {
-    // 1. Sprawdzenie autentyfikacji
-    const userId = locals.user?.id;
-    if (!userId) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "authentication_required",
-            message: "Wymagana autentyfikacja",
-          },
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    requestBody = await request.json();
+  } catch {
+    throw new ApiError(400, "Invalid JSON format.", "INVALID_JSON");
+  }
 
-    // 2. Validation of Content-Type
-    const contentType = request.headers.get("content-type");
-    if (!contentType?.includes("application/json")) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "INVALID_CONTENT_TYPE",
-            message: "Content-Type must be application/json",
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+  // 4. Validate request body using Zod
+  const validationResult = extractFromTextSchema.safeParse(requestBody);
+  if (!validationResult.success) {
+    const firstError = validationResult.error.errors[0];
+    const errorCode = firstError.code === "too_small" && firstError.minimum === 1 ? "MISSING_TEXT" : "TEXT_TOO_LONG";
+    throw new ApiError(400, firstError.message, errorCode);
+  }
 
-    // 3. Parse JSON
-    let requestBody;
-    try {
-      requestBody = await request.json();
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "INVALID_JSON",
-            message: "Invalid JSON format",
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+  const { text } = validationResult.data;
 
-    // 4. Validation of request body using Zod
-    const validationResult = extractFromTextSchema.safeParse(requestBody);
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: firstError.code === "too_small" && firstError.minimum === 1 ? "MISSING_TEXT" : "TEXT_TOO_LONG",
-            message: firstError.message,
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+  // 5. Check daily extraction limit
+  const isUnderLimit = await recipeExtractionService.checkDailyLimit(locals.supabase, userId);
+  if (!isUnderLimit) {
+    throw new ApiError(429, "Daily extraction limit exceeded (100/day).", "DAILY_LIMIT_EXCEEDED");
+  }
 
-    const { text } = validationResult.data;
+  // 6. Extract recipe data from text using AI
+  const startTime = Date.now();
+  const extractionResult = await recipeExtractionService.extractFromText(text);
+  const generationDuration = Date.now() - startTime;
 
-    // 5. Check daily extraction limit
-    let isUnderLimit;
-    try {
-      isUnderLimit = await recipeExtractionService.checkDailyLimit(userId);
-    } catch (error) {
-      console.error("Error checking daily limit:", error);
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "DATABASE_ERROR",
-            message: "Internal server error",
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    if (!isUnderLimit) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "DAILY_LIMIT_EXCEEDED",
-            message: "Przekroczono dzienny limit ekstrakcji (100/dzień)",
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 429,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // 7. Extract recipe data from text using AI
-    let extractionResult;
-    let extractionLogId;
-    const startTime = Date.now();
-
-    try {
-      extractionResult = await recipeExtractionService.extractFromText(text);
-      const generationDuration = Date.now() - startTime;
-
-      // Sprawdź czy są krytyczne błędy (brak składników lub kroków)
-      if (extractionResult.hasErrors) {
-        // Log failed extraction attempt
-        extractionLogId = await recipeExtractionService.logExtractionAttempt(
-          userId,
-          text,
-          null,
-          `Krytyczne błędy walidacji: ${extractionResult.warnings.join(", ")}`,
-          null,
-          generationDuration
-        );
-
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "AI_EXTRACTION_ERROR",
-              message:
-                "Nie udało się wyekstraktować kluczowych danych przepisu z podanego tekstu. Sprawdź czy tekst zawiera przepis kulinarny.",
-              details: {
-                warnings: extractionResult.warnings.join("; "),
-              },
-            },
-          } as ErrorResponseDTO),
-          {
-            status: 422,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      // 8. Log successful extraction to database (nawet z ostrzeżeniami)
-      extractionLogId = await recipeExtractionService.logExtractionAttempt(
-        userId,
-        text,
-        extractionResult.data,
-        extractionResult.warnings.length > 0 ? `Ostrzeżenia: ${extractionResult.warnings.join(", ")}` : null,
-        null, // tokens will be available in future update
-        generationDuration
-      );
-
-      // 9. Increment daily extraction counter
-      await recipeExtractionService.incrementDailyCount(userId);
-    } catch (error) {
-      console.error("Error during AI extraction:", error);
-      const generationDuration = Date.now() - startTime;
-
-      // Log failed extraction attempt
-      try {
-        extractionLogId = await recipeExtractionService.logExtractionAttempt(
-          userId,
-          text,
-          null,
-          error instanceof Error ? error.message : "Unknown error",
-          null,
-          generationDuration
-        );
-      } catch (logError) {
-        console.error("Error logging failed extraction:", logError);
-        // Continue with original error response even if logging fails
-      }
-
-      // Return appropriate error based on the type of error
-      if (error instanceof Error) {
-        if (error.message.includes("klucz API") || error.message.includes("OPENROUTER_API_KEY")) {
-          return new Response(
-            JSON.stringify({
-              error: {
-                code: "AI_SERVICE_ERROR",
-                message: "Serwis AI jest tymczasowo niedostępny. Spróbuj ponownie za chwilę.",
-              },
-            } as ErrorResponseDTO),
-            {
-              status: 503,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
-        }
-
-        if (error.message.includes("limit") || error.message.includes("rate")) {
-          return new Response(
-            JSON.stringify({
-              error: {
-                code: "AI_SERVICE_ERROR",
-                message: "Serwis AI jest przeciążony. Spróbuj ponownie za chwilę.",
-              },
-            } as ErrorResponseDTO),
-            {
-              status: 429,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
-        }
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "AI_SERVICE_ERROR",
-            message:
-              "Nie udało się przetworzyć tekstu przepisu. Sprawdź czy tekst zawiera przepis kulinarny i spróbuj ponownie.",
-          },
-        } as ErrorResponseDTO),
-        {
-          status: 422,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // 10. Prepare response
-    const response: ExtractFromTextResponseDTO = {
-      extraction_log_id: extractionLogId,
-      extracted_data: extractionResult.data,
-      original_text: text,
-      warnings: extractionResult.warnings.length > 0 ? extractionResult.warnings : undefined,
-    };
-
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Unexpected error in endpoint /api/recipe/extract-from-text:", error);
-    return new Response(
-      JSON.stringify({
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Internal server error",
-        },
-      } as ErrorResponseDTO),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+  if (extractionResult.hasErrors) {
+    // Log failed extraction attempt and throw an error
+    await recipeExtractionService.logExtractionAttempt(
+      locals.supabase,
+      userId,
+      text,
+      null,
+      `Validation errors: ${extractionResult.warnings.join(", ")}`,
+      null,
+      generationDuration
+    );
+    throw new ApiError(
+      422,
+      "Failed to extract key recipe data from the provided text. Please ensure it contains a valid recipe.",
+      "AI_EXTRACTION_ERROR"
     );
   }
+
+  // 7. Log successful extraction and increment daily counter
+  const extractionLogId = await recipeExtractionService.logExtractionAttempt(
+    locals.supabase,
+    userId,
+    text,
+    extractionResult.data,
+    extractionResult.warnings.length > 0 ? `Warnings: ${extractionResult.warnings.join(", ")}` : null,
+    null, // tokens will be available in future update
+    generationDuration
+  );
+  await recipeExtractionService.incrementDailyCount(locals.supabase, userId);
+
+  // 8. Prepare and return the successful response
+  const response: ExtractFromTextResponseDTO = {
+    extraction_log_id: extractionLogId,
+    extracted_data: extractionResult.data,
+    original_text: text,
+    warnings: extractionResult.warnings.length > 0 ? extractionResult.warnings : undefined,
+  };
+
+  return new Response(JSON.stringify(response), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };

@@ -1,66 +1,12 @@
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import { OpenRouterService } from "../openrouter.service";
+import { OpenRouterService } from "./openrouter.service";
 import type { ChatCompletionRequest, ResponseFormat } from "../../types";
+import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "../validations/recipe.validation";
+import { SUPPORTED_URL_DOMAINS, type SupportedUrlDomain } from "../constants";
+import { ApiError } from "../errors";
 
 /**
- * JSON Schema dla odpowiedzi AI - wyekstraktowane dane przepisu z URL
- */
-const RECIPE_URL_EXTRACTION_SCHEMA = {
-  type: "object",
-  properties: {
-    name: {
-      type: "string",
-      description: "Recipe name in Polish (EXACTLY this field name: 'name')",
-    },
-    ingredients: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description:
-        "List of ingredients, each as separate string with quantity and unit (EXACTLY this field name: 'ingredients')",
-    },
-    steps: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description: "List of preparation steps, each as separate string (EXACTLY this field name: 'steps')",
-    },
-    preparation_time: {
-      type: "string",
-      description: "Preparation time as string (EXACTLY this field name: 'preparation_time')",
-    },
-    suggested_tags: {
-      type: "array",
-      items: {
-        type: "string",
-        enum: [
-          "obiad",
-          "śniadanie",
-          "kolacja",
-          "deser",
-          "ciasto",
-          "zupa",
-          "makaron",
-          "mięso",
-          "ryby",
-          "wegetariańskie",
-          "wegańskie",
-          "latwe",
-          "szybkie",
-          "trudne",
-        ],
-      },
-      description: "Suggested tags from allowed list only (EXACTLY this field name: 'suggested_tags')",
-    },
-  },
-  required: ["name", "ingredients", "steps", "suggested_tags"],
-  additionalProperties: false,
-};
-
-/**
- * System prompt dla ekstrakcji przepisów z HTML/treści URL
+ * System prompt for recipe extraction from HTML/URL content
  */
 const RECIPE_URL_EXTRACTION_SYSTEM_PROMPT = `You are an expert at analyzing Polish culinary recipes from websites. Your task is to extract structured recipe data from content scraped from culinary websites.
 
@@ -82,7 +28,7 @@ EXTRACTION RULES:
 Return JSON response following the schema EXACTLY.`;
 
 /**
- * Interfejs dla rezultatu scrapingu
+ * Interface for scraping result
  */
 interface ScrapingResult {
   content: string;
@@ -94,17 +40,15 @@ interface ScrapingResult {
  * Service for scraping recipes from supported URLs
  */
 export class UrlScraperService {
-  private supportedDomains = ["aniagotuje.pl", "kwestiasmaku.com"];
-
   constructor(private openRouterService: OpenRouterService) {}
 
   /**
    * Checks if a URL is from a supported domain
    */
-  isSupportedUrl(url: string): boolean {
+  isSupportedUrl(url: string): url is SupportedUrlDomain {
     try {
       const parsedUrl = new URL(url);
-      return this.supportedDomains.some(
+      return SUPPORTED_URL_DOMAINS.some(
         (domain) => parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`)
       );
     } catch {
@@ -113,7 +57,7 @@ export class UrlScraperService {
   }
 
   /**
-   * Pobiera i parsuje treść z URL
+   * Fetches and parses content from URL
    */
   private async scrapeUrl(url: string): Promise<ScrapingResult> {
     try {
@@ -136,19 +80,19 @@ export class UrlScraperService {
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === "TimeoutError") {
-          throw new Error("Przekroczono czas oczekiwania na odpowiedź ze strony");
+          throw new Error("Timeout while waiting for response from the page");
         }
-        throw new Error(`Błąd pobierania strony: ${error.message}`);
+        throw new Error(`Error while fetching the page: ${error.message}`);
       }
-      throw new Error("Nieznany błąd podczas pobierania strony");
+      throw new Error("Unknown error while fetching the page");
     }
   }
 
   /**
-   * Wyodrębnia treść przepisu z HTML
+   * Extracts recipe content from HTML
    */
   private extractContentFromHtml(html: string, url: string): ScrapingResult {
-    // Podstawowe czyszczenie HTML - usuwanie skryptów, stylów itp.
+    // basic HTML cleaning - removing scripts, styles, etc.
     const cleanHtml = html
       .replace(/<script[^>]*>.*?<\/script>/gis, "")
       .replace(/<style[^>]*>.*?<\/style>/gis, "")
@@ -157,14 +101,14 @@ export class UrlScraperService {
       .replace(/<header[^>]*>.*?<\/header>/gis, "")
       .replace(/<!--.*?-->/gs, "");
 
-    // Próba wyodrębnienia tytułu
+    // try to extract title
     const titleMatch = cleanHtml.match(/<title[^>]*>(.*?)<\/title>/i);
     const title = titleMatch ? titleMatch[1].trim() : undefined;
 
-    // Enhanced image extraction with priority for higher resolution
+    // enhanced image extraction with priority for higher resolution
     let imageUrl = this.extractHighResolutionImage(cleanHtml, url);
 
-    // Konwersja względnych URL na bezwzględne
+    // convert relative URLs to absolute
     if (imageUrl && !imageUrl.startsWith("http")) {
       try {
         const baseUrl = new URL(url);
@@ -174,7 +118,7 @@ export class UrlScraperService {
       }
     }
 
-    // Usuwanie tagów HTML i konwersja do tekstu
+    // remove HTML tags and convert to text
     const textContent = cleanHtml
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
@@ -191,7 +135,7 @@ export class UrlScraperService {
    * Enhanced image extraction that prioritizes higher resolution images
    */
   private extractHighResolutionImage(html: string, _url: string): string | undefined {
-    // Priority 1: High-resolution meta tags
+    // priority 1: high-resolution meta tags
     const highResMetaTags = [
       /<meta[^>]*property="og:image:secure_url"[^>]*content="([^"]*)"[^>]*>/i,
       /<meta[^>]*property="og:image:url"[^>]*content="([^"]*)"[^>]*>/i,
@@ -204,14 +148,14 @@ export class UrlScraperService {
       const match = html.match(pattern);
       if (match && match[1]) {
         const imageUrl = match[1];
-        // Check if it looks like a high-resolution image
+        // check if it looks like a high-resolution image
         if (this.isHighResolutionImageUrl(imageUrl)) {
           return imageUrl;
         }
       }
     }
 
-    // Priority 2: JSON-LD structured data
+    // priority 2: JSON-LD structured data
     const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gis);
     if (jsonLdMatch) {
       for (const jsonLdScript of jsonLdMatch) {
@@ -223,16 +167,16 @@ export class UrlScraperService {
             return imageUrl;
           }
         } catch {
-          // Ignore malformed JSON-LD
+          // ignore malformed JSON-LD
         }
       }
     }
 
-    // Priority 3: High-resolution image attributes (srcset, data-src, etc.)
+    // priority 3: high-resolution image attributes (srcset, data-src, etc.)
     const highResImagePatterns = [
-      // Srcset with high DPI
+      // srcset with high DPI
       /<img[^>]*srcset="([^"]*)"[^>]*>/gi,
-      // Data attributes often contain full-size images
+      // data attributes often contain full-size images
       /<img[^>]*data-src="([^"]*)"[^>]*>/gi,
       /<img[^>]*data-original="([^"]*)"[^>]*>/gi,
       /<img[^>]*data-lazy="([^"]*)"[^>]*>/gi,
@@ -243,14 +187,14 @@ export class UrlScraperService {
       let match;
       while ((match = pattern.exec(html)) !== null) {
         if (match[1]) {
-          // For srcset, take the highest resolution option
+          // for srcset, take the highest resolution option
           if (pattern.source.includes("srcset")) {
             const srcsetUrl = this.getBestImageFromSrcset(match[1]);
             if (srcsetUrl && this.isRecipeRelatedImage(match[0])) {
               return srcsetUrl;
             }
           } else {
-            // For data attributes, check if it's recipe-related
+            // for data attributes, check if it's recipe-related
             if (this.isRecipeRelatedImage(match[0]) && this.isHighResolutionImageUrl(match[1])) {
               return match[1];
             }
@@ -259,7 +203,7 @@ export class UrlScraperService {
       }
     }
 
-    // Priority 4: Regular img tags with recipe-related context
+    // priority 4: regular img tags with recipe-related context
     const recipeImagePatterns = [
       /<img[^>]*src="([^"]*)"[^>]*alt="[^"]*przepis[^"]*"/gi,
       /<img[^>]*alt="[^"]*przepis[^"]*"[^>]*src="([^"]*)"/gi,
@@ -276,7 +220,7 @@ export class UrlScraperService {
       }
     }
 
-    // Fallback: First meta og:image (original behavior)
+    // fallback: first meta og:image (original behavior)
     const fallbackMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]*)"[^>]*>/i);
     return fallbackMatch ? fallbackMatch[1] : undefined;
   }
@@ -289,7 +233,7 @@ export class UrlScraperService {
 
     const recipeData = data as Record<string, unknown>;
 
-    // Handle arrays of objects
+    // handle arrays of objects
     if (Array.isArray(recipeData)) {
       for (const item of recipeData) {
         const imageUrl = this.extractImageFromJsonLd(item);
@@ -325,7 +269,7 @@ export class UrlScraperService {
   private isHighResolutionImageUrl(url: string): boolean {
     if (!url) return false;
 
-    // Check for high-resolution indicators in URL
+    // check for high-resolution indicators in URL
     const highResIndicators = [
       /large|big|full|original|hd|high|xl|xxl/i,
       /\d{3,4}x\d{3,4}/, // Resolution like 800x600
@@ -370,7 +314,7 @@ export class UrlScraperService {
         if (descriptor.endsWith("w")) {
           width = parseInt(descriptor.slice(0, -1));
         } else if (descriptor.endsWith("x")) {
-          // Assume 2x means 800px base width
+          // assume 2x means 800px base width
           width = parseInt(descriptor.slice(0, -1)) * 400;
         }
       }
@@ -378,38 +322,42 @@ export class UrlScraperService {
       return { url, width };
     });
 
-    // Sort by width and return the highest resolution
+    // sort by width and return the highest resolution
     sources.sort((a, b) => b.width - a.width);
     return sources[0]?.url;
   }
 
   /**
-   * Ekstraktuje przepis z URL używając scrapingu i AI
+   * Extracts a recipe from a URL by scraping and using AI
    */
   async extractFromUrl(url: string): Promise<ExtractionValidationResult> {
     if (!this.isSupportedUrl(url)) {
-      throw new Error("Podana strona nie jest obsługiwana. Wspierane domeny: aniagotuje.pl, kwestiasmaku.com");
+      throw new ApiError(
+        400,
+        `The provided website is not supported. Supported domains: ${SUPPORTED_URL_DOMAINS.join(", ")}`,
+        "UNSUPPORTED_DOMAIN"
+      );
     }
 
     try {
-      // 1. Scraping treści
+      // 1. scraping content
       const scrapingResult = await this.scrapeUrl(url);
 
       if (!scrapingResult.content || scrapingResult.content.length < 100) {
-        throw new Error("Nie udało się pobrać wystarczającej ilości treści ze strony");
+        throw new Error("Failed to fetch sufficient content from the page");
       }
 
-      // 2. Przygotowanie response format z JSON schema
+      // 2. prepare response format with JSON schema
       const responseFormat: ResponseFormat = {
         type: "json_schema",
         json_schema: {
           name: "recipe_url_extraction",
           strict: true,
-          schema: RECIPE_URL_EXTRACTION_SCHEMA,
+          schema: RECIPE_EXTRACTION_SCHEMA,
         },
       };
 
-      // 3. Przygotowanie requestu do OpenRouter
+      // 3. prepare request for OpenRouter
       const chatRequest: ChatCompletionRequest = {
         systemMessage: RECIPE_URL_EXTRACTION_SYSTEM_PROMPT,
         userMessage: `Wyekstraktuj dane przepisu z następującej treści strony internetowej:
@@ -418,7 +366,7 @@ URL: ${url}
 ${scrapingResult.title ? `Tytuł strony: ${scrapingResult.title}` : ""}
 
 Treść:
-${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
+${scrapingResult.content.slice(0, 8000)}`, // limit for tokens
         responseFormat,
         modelParameters: {
           temperature: 1,
@@ -426,13 +374,11 @@ ${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
         },
       };
 
-      // 4. Wywołanie OpenRouter API
       const response = await this.openRouterService.createChatCompletion(chatRequest);
 
-      // 5. Parsowanie odpowiedzi JSON
       const assistantMessage = response.choices[0]?.message?.content;
       if (!assistantMessage) {
-        throw new Error("Brak odpowiedzi od modelu AI");
+        throw new Error("No response from AI model");
       }
 
       let extractedData: ExtractedRecipeDataDTO;
@@ -440,14 +386,14 @@ ${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
         extractedData = JSON.parse(assistantMessage);
       } catch (parseError) {
         throw new Error(
-          `Nieprawidłowy format odpowiedzi JSON: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+          `Invalid JSON response format: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
         );
       }
 
-      // 6. Walidacja wyekstraktowanych danych
-      const validationResult = this.validateExtractedData(extractedData);
+      // validate extracted data
+      const validationResult = validateExtractedData(extractedData);
 
-      // 7. Dodanie URL źródła i obrazka jeśli dostępny
+      // add source URL and image URL if available
       validationResult.data.source_url = url;
       if (scrapingResult.imageUrl) {
         validationResult.data.image_url = scrapingResult.imageUrl;
@@ -456,150 +402,8 @@ ${scrapingResult.content.slice(0, 8000)}`, // Ograniczenie długości dla tokeny
       return validationResult;
     } catch (error) {
       console.error("Error in extractFromUrl:", error);
+      // throw error to endpoint to handle it properly
       throw error;
     }
-  }
-
-  /**
-   * Waliduje wyekstraktowane dane przepisu i zwraca dane z ostrzeżeniami
-   * @private
-   */
-  private validateExtractedData(data: unknown): ExtractionValidationResult {
-    const warnings: string[] = [];
-    let hasErrors = false;
-
-    if (!data || typeof data !== "object") {
-      hasErrors = true;
-      warnings.push("Otrzymano nieprawidłowe dane z AI - spróbuj ponownie z innym URL");
-      return {
-        data: this.getDefaultRecipeData(),
-        warnings,
-        hasErrors,
-      };
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    // Inicjalizacja wyniku z domyślnymi wartościami
-    const result: ExtractedRecipeDataDTO = {
-      name: "",
-      ingredients: [],
-      steps: [],
-      preparation_time: undefined,
-      suggested_tags: [],
-    };
-
-    // Walidacja nazwy
-    if (!obj.name || typeof obj.name !== "string" || obj.name.trim().length === 0) {
-      warnings.push("W przepisie nie wykryto nazwy - uzupełnij ją samodzielnie");
-      result.name = "Nowy przepis"; // Domyślna nazwa
-    } else {
-      result.name = obj.name.trim();
-    }
-
-    // Walidacja składników
-    if (!Array.isArray(obj.ingredients) || obj.ingredients.length === 0) {
-      warnings.push("Nie wykryto składników - dodaj je samodzielnie");
-      hasErrors = true;
-    } else {
-      const validIngredients: string[] = [];
-      for (const ingredient of obj.ingredients) {
-        if (typeof ingredient === "string" && ingredient.trim().length > 0) {
-          validIngredients.push(ingredient.trim());
-        }
-      }
-
-      if (validIngredients.length === 0) {
-        warnings.push("Wykryte składniki były puste - dodaj je samodzielnie");
-        hasErrors = true;
-      } else if (validIngredients.length < obj.ingredients.length) {
-        warnings.push("Część składników była nieprawidłowa i została pominięta");
-      }
-
-      result.ingredients = validIngredients;
-    }
-
-    // Walidacja kroków
-    if (!Array.isArray(obj.steps) || obj.steps.length === 0) {
-      warnings.push("Nie wykryto kroków przygotowania - dodaj je samodzielnie");
-      hasErrors = true;
-    } else {
-      const validSteps: string[] = [];
-      for (const step of obj.steps) {
-        if (typeof step === "string" && step.trim().length > 0) {
-          validSteps.push(step.trim());
-        }
-      }
-
-      if (validSteps.length === 0) {
-        warnings.push("Wykryte kroki były puste - dodaj je samodzielnie");
-        hasErrors = true;
-      } else if (validSteps.length < obj.steps.length) {
-        warnings.push("Część kroków była nieprawidłowa i została pominięta");
-      }
-
-      result.steps = validSteps;
-    }
-
-    // Walidacja czasu przygotowania
-    if (obj.preparation_time && typeof obj.preparation_time === "string" && obj.preparation_time.trim().length > 0) {
-      result.preparation_time = obj.preparation_time.trim();
-    }
-
-    // Walidacja tagów
-    const allowedTags = [
-      "obiad",
-      "śniadanie",
-      "kolacja",
-      "deser",
-      "ciasto",
-      "zupa",
-      "makaron",
-      "mięso",
-      "ryby",
-      "wegetariańskie",
-      "wegańskie",
-      "latwe",
-      "szybkie",
-      "trudne",
-    ];
-
-    if (Array.isArray(obj.suggested_tags)) {
-      const validTags: string[] = [];
-      const invalidTags: string[] = [];
-
-      for (const tag of obj.suggested_tags) {
-        if (typeof tag === "string" && allowedTags.includes(tag)) {
-          validTags.push(tag);
-        } else if (typeof tag === "string") {
-          invalidTags.push(tag);
-        }
-      }
-
-      result.suggested_tags = validTags;
-
-      if (invalidTags.length > 0) {
-        warnings.push(`Nieprawidłowe tagi zostały pominięte: ${invalidTags.join(", ")}`);
-      }
-    }
-
-    return {
-      data: result,
-      warnings,
-      hasErrors,
-    };
-  }
-
-  /**
-   * Zwraca domyślne dane przepisu w przypadku krytycznego błędu
-   * @private
-   */
-  private getDefaultRecipeData(): ExtractedRecipeDataDTO {
-    return {
-      name: "Nowy przepis",
-      ingredients: [],
-      steps: [],
-      suggested_tags: [],
-    };
   }
 }
