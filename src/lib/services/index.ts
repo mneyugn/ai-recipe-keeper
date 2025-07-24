@@ -1,22 +1,16 @@
 // Legacy exports for backward compatibility during transition
-// These will be removed once all API endpoints are updated to use DI
+// Most services have been migrated to the new module structure
 
 import { openRouterConfig, validateConfiguration } from "../config";
 import { OpenRouterService } from "./openrouter.service";
-import { RecipeExtractionService } from "./recipe-extraction.service";
-import { UrlScraperService } from "./url-scraper.service";
 
-// Initialize and share main services (legacy approach)
+// Initialize main service that remains in services (shared service)
 validateConfiguration();
 
 export const openRouterService = new OpenRouterService(openRouterConfig);
-export const recipeExtractionService = new RecipeExtractionService(openRouterService);
-export const urlScraperService = new UrlScraperService(openRouterService);
 
 // Export classes for DI container
-export { OpenRouterService, RecipeExtractionService, UrlScraperService };
-
-export { UserService } from "./user.service";
+export { OpenRouterService };
 
 // Re-export DI container utilities
 export { getService, createRequestContainer } from "../core/container";

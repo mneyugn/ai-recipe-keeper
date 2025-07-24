@@ -13,6 +13,8 @@ export const extractedRecipeDataSchema = z
     steps: z.array(z.string().trim().min(1)).min(1, "At least one preparation step is required."),
     preparation_time: z.string().trim().optional(),
     suggested_tags: z.array(z.string()).default([]),
+    image_url: z.string().trim().optional(),
+    source_url: z.string().trim().optional(),
   })
   .strip(); // Removes any properties not defined in the schema
 
@@ -50,9 +52,16 @@ export const RECIPE_EXTRACTION_SCHEMA = {
       type: "array",
       items: {
         type: "string",
-        enum: [...ALLOWED_TAGS],
       },
-      description: "Suggested tags from allowed list only (EXACTLY this field name: 'suggested_tags')",
+      description: "Suggested tags from allowed list (EXACTLY this field name: 'suggested_tags')",
+    },
+    image_url: {
+      type: "string",
+      description: "Main recipe image URL extracted from page (EXACTLY this field name: 'image_url')",
+    },
+    source_url: {
+      type: "string",
+      description: "Original source URL of the recipe (EXACTLY this field name: 'source_url')",
     },
   },
   required: ["name", "ingredients", "steps", "suggested_tags"],

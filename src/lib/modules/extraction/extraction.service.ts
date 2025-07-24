@@ -1,10 +1,10 @@
 import { injectable, inject } from "tsyringe";
-import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import type { SupabaseClient } from "../../db/supabase.client";
-import type { Database, Json } from "../../db/database.types";
-import { OpenRouterService } from "./openrouter.service";
-import type { ChatCompletionRequest, ResponseFormat } from "../../types";
-import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "../validations/recipe.validation";
+import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../../types";
+import type { SupabaseClient } from "../../../db/supabase.client";
+import type { Database, Json } from "../../../db/database.types";
+import type { OpenRouterService } from "../../services/openrouter.service";
+import type { ChatCompletionRequest, ResponseFormat } from "../../../types";
+import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "../../validations/recipe.validation";
 
 /**
  * System prompt for recipe extraction from text
@@ -32,7 +32,7 @@ Return JSON response following the schema EXACTLY.`;
  * Includes rate limiting and database logging functionality
  */
 @injectable()
-export class RecipeExtractionService {
+export class ExtractionService {
   constructor(@inject("OpenRouterService") public openRouterService: OpenRouterService) {}
 
   /**

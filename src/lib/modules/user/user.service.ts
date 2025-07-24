@@ -1,6 +1,6 @@
 import { injectable, inject } from "tsyringe";
-import type { SupabaseClient } from "../../db/supabase.client";
-import type { UserProfileDTO } from "../../types";
+import type { SupabaseClient } from "../../../db/supabase.client";
+import type { UserProfileDTO } from "../../../types";
 
 /**
  * Service for user-related operations

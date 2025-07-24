@@ -11,10 +11,12 @@ import { TagService } from "../modules/tag/tag.service";
 import { TagController } from "../modules/tag/tag.controller";
 import { RecipeService } from "../modules/recipe/recipe.service";
 import { RecipeController } from "../modules/recipe/recipe.controller";
-import { UserService } from "../services/user.service";
+import { UserService } from "../modules/user/user.service";
+import { UserController } from "../modules/user/user.controller";
 import { OpenRouterService } from "../services/openrouter.service";
-import { RecipeExtractionService } from "../services/recipe-extraction.service";
-import { UrlScraperService } from "../services/url-scraper.service";
+import { ExtractionService } from "../modules/extraction/extraction.service";
+import { UrlScraperService } from "../modules/extraction/url-scraper.service";
+import { ExtractionController } from "../modules/extraction/extraction.controller";
 
 /**
  * Configures and registers all services in the DI container.
@@ -34,7 +36,7 @@ function configureGlobalDependencies(): void {
   container.register("RecipeService", { useClass: RecipeService });
   container.register("TagService", { useClass: TagService });
   container.register("UserService", { useClass: UserService });
-  container.register("RecipeExtractionService", { useClass: RecipeExtractionService });
+  container.register("ExtractionService", { useClass: ExtractionService });
   container.register("UrlScraperService", { useClass: UrlScraperService });
   container.register("IAuthService", { useClass: AuthService });
 
@@ -43,6 +45,8 @@ function configureGlobalDependencies(): void {
   container.register("AuthController", { useClass: AuthController });
   container.register("TagController", { useClass: TagController });
   container.register("RecipeController", { useClass: RecipeController });
+  container.register("UserController", { useClass: UserController });
+  container.register("ExtractionController", { useClass: ExtractionController });
 }
 
 /**
