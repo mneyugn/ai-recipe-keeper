@@ -1,0 +1,17 @@
+---
+alwaysApply: false
+---
+
+# Dependency Injection (DI) Patterns
+
+This document outlines the rules and patterns for using Dependency Injection with `tsyringe` in this project.
+
+## 1. Injection Token Usage
+
+**Rule:** Always use **string literals** for injection tokens. Do NOT use a shared `TOKENS` object imported from the container.
+
+## 2. Service Registration
+
+- **Stateless/Expensive Services:** Register as singletons in `src/lib/core/container.ts` using `container.registerSingleton()` or `container.registerInstance()`.
+- **Request-Scoped Services:** Register as transient dependencies (the default) using `container.register()`. A new instance will be created for each request container.
+- **Request-Specific Instances:** For instances that depend on the request context (like the Supabase client), create a child container per request and register the instance there.

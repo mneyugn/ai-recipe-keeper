@@ -1,3 +1,4 @@
+import type { APIContext } from "astro";
 import { ApiError } from "../../errors";
 import { error as createErrorResponse } from "../responses";
 
@@ -41,12 +42,12 @@ export function errorHandler(error: unknown): Response {
  * @param handler - The async function that handles the API request
  * @returns Wrapped handler with error handling
  */
-export function withErrorHandler(handler: (request: Request, context?: unknown) => Promise<Response>) {
-  return async (request: Request, context?: unknown): Promise<Response> => {
+export function withErrorHandler(handler: (context: APIContext) => Promise<Response>) {
+  return async (context: APIContext): Promise<Response> => {
     try {
-      return await handler(request, context);
-    } catch (error) {
-      return errorHandler(error);
+      return await handler(context);
+    } catch (err) {
+      return errorHandler(err);
     }
   };
 }

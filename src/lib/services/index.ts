@@ -20,4 +20,4 @@ export { TagService } from "./tag.service";
 export { UserService } from "./user.service";
 
 // Re-export DI container utilities
-export { TOKENS, getService, createRequestContainer } from "../core/container";
+export { getService, createRequestContainer } from "../core/container";

@@ -1,9 +1,12 @@
 import "reflect-metadata";
-import { container } from "tsyringe";
-import type { SupabaseClient } from "../../db/supabase.client";
+import { container, instanceCachingFactory } from "tsyringe";
+import type { APIContext } from "astro";
+import { createSupabaseServerInstance } from "../../db/supabase.client";
 import { openRouterConfig, validateConfiguration } from "../config";
 
-// Import all services
+// Import all services and controllers
+import { AuthService } from "../modules/auth/auth.service";
+import { AuthController } from "../modules/auth/auth.controller";
 import { RecipeService } from "../services/recipe.service";
 import { TagService } from "../services/tag.service";
 import { UserService } from "../services/user.service";
@@ -11,53 +14,56 @@ import { OpenRouterService } from "../services/openrouter.service";
 import { RecipeExtractionService } from "../services/recipe-extraction.service";
 import { UrlScraperService } from "../services/url-scraper.service";
 
-// Token constants for injection
-export const TOKENS = {
-  SupabaseClient: "SupabaseClient",
-  OpenRouterService: "OpenRouterService",
-  RecipeService: "RecipeService",
-  TagService: "TagService",
-  UserService: "UserService",
-  RecipeExtractionService: "RecipeExtractionService",
-  UrlScraperService: "UrlScraperService",
-} as const;
-
 /**
- * Configures and registers all services in the DI container
- * This function should be called once during application startup
+ * Configures and registers all services in the DI container.
+ * This function is called once during application startup.
  */
-export function configureDependencies(): void {
+function configureGlobalDependencies(): void {
   // Validate configuration before registering services
   validateConfiguration();
 
-  // Register OpenRouterService as singleton with config
-  container.register(TOKENS.OpenRouterService, {
+  // Register OpenRouterService as a singleton with its configuration
+  container.register("OpenRouterService", {
     useValue: new OpenRouterService(openRouterConfig),
   });
 
-  // Register all other services as transient (new instance per request)
-  container.register(TOKENS.RecipeService, RecipeService);
-  container.register(TOKENS.TagService, TagService);
-  container.register(TOKENS.UserService, UserService);
-  container.register(TOKENS.RecipeExtractionService, RecipeExtractionService);
-  container.register(TOKENS.UrlScraperService, UrlScraperService);
+  // Register application services
+  // These are stateless and can be singletons
+  container.register("RecipeService", { useClass: RecipeService });
+  container.register("TagService", { useClass: TagService });
+  container.register("UserService", { useClass: UserService });
+  container.register("RecipeExtractionService", { useClass: RecipeExtractionService });
+  container.register("UrlScraperService", { useClass: UrlScraperService });
+  container.register("IAuthService", { useClass: AuthService });
+
+  // Register controllers
+  // Controllers are instantiated per-request, so we register the class
+  container.register("AuthController", { useClass: AuthController });
 }
 
 /**
- * Registers a Supabase client instance for the current request context
- * This should be called at the beginning of each API request
+ * Creates a request-specific DI container.
+ *
+ * This function should be called at the beginning of each API request.
+ * It creates a child container and registers request-specific instances,
+ * like the Supabase client, which depends on request headers and cookies.
+ *
+ * @param context - The Astro API context for the current request.
+ * @returns A child container for the request.
  */
-export function registerSupabaseClient(supabaseClient: SupabaseClient): void {
-  container.registerInstance(TOKENS.SupabaseClient, supabaseClient);
-}
-
-/**
- * Creates a child container for request-scoped dependencies
- * This isolates each request and prevents cross-request contamination
- */
-export function createRequestContainer(supabaseClient: SupabaseClient) {
+export function createRequestContainer(context: APIContext) {
   const requestContainer = container.createChildContainer();
-  requestContainer.registerInstance(TOKENS.SupabaseClient, supabaseClient);
+
+  // Register SupabaseClient as a factory to create a new instance per request
+  requestContainer.register("SupabaseClient", {
+    useFactory: instanceCachingFactory(() =>
+      createSupabaseServerInstance({
+        headers: context.request.headers,
+        cookies: context.cookies,
+      })
+    ),
+  });
+
   return requestContainer;
 }
 
@@ -75,5 +81,5 @@ export function getServiceFromContainer<T>(containerInstance: typeof container, 
   return containerInstance.resolve<T>(token);
 }
 
-// Configure dependencies on module load
-configureDependencies();
+// Immediately configure global dependencies when this module is imported
+configureGlobalDependencies();
