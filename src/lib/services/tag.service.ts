@@ -1,8 +1,10 @@
+import { injectable, inject } from "tsyringe";
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { TagDTO } from "../../types";
 
+@injectable()
 export class TagService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(@inject("SupabaseClient") private supabase: SupabaseClient) {}
 
   /**
    * Fetches all active tags from the database

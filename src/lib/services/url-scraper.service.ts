@@ -1,3 +1,4 @@
+import { injectable, inject } from "tsyringe";
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
 import { OpenRouterService } from "./openrouter.service";
 import type { ChatCompletionRequest, ResponseFormat } from "../../types";
@@ -39,8 +40,9 @@ interface ScrapingResult {
 /**
  * Service for scraping recipes from supported URLs
  */
+@injectable()
 export class UrlScraperService {
-  constructor(private openRouterService: OpenRouterService) {}
+  constructor(@inject("OpenRouterService") private openRouterService: OpenRouterService) {}
 
   /**
    * Checks if a URL is from a supported domain

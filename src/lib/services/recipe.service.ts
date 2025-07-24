@@ -1,3 +1,4 @@
+import { injectable, inject } from "tsyringe";
 import type { SupabaseClient } from "../../db/supabase.client";
 import type {
   RecipeListResponseDTO,
@@ -11,8 +12,9 @@ import type {
 import type { TablesInsert, TablesUpdate } from "../../db/database.types";
 import type { ValidatedRecipeListParams, RecipeOwnershipCheck } from "../validations/recipe";
 
+@injectable()
 export class RecipeService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(@inject("SupabaseClient") private supabase: SupabaseClient) {}
 
   /**
    * Fetches user's recipe list with pagination and filtering

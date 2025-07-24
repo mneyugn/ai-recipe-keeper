@@ -9,17 +9,20 @@
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly errorCode: string | undefined;
+  public readonly details?: unknown;
 
   /**
    * @param statusCode - HTTP status code to be returned to the client.
    * @param message - Developer-facing error message (can be logged).
    * @param errorCode - Optional, client-facing code (e.g., "INVALID_INPUT").
+   * @param details - Optional, structured error details (e.g., validation errors from Zod).
    */
-  constructor(statusCode: number, message: string, errorCode?: string) {
+  constructor(statusCode: number, message: string, errorCode?: string, details?: unknown) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.errorCode = errorCode;
+    this.details = details;
 
     // necessary for custom errors in TypeScript to work correctly
     Object.setPrototypeOf(this, ApiError.prototype);

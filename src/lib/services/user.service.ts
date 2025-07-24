@@ -1,11 +1,13 @@
+import { injectable, inject } from "tsyringe";
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { UserProfileDTO } from "../../types";
 
 /**
  * Service for user-related operations
  */
+@injectable()
 export class UserService {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(@inject("SupabaseClient") private supabase: SupabaseClient) {}
 
   /**
    * Fetches full user profile with additional data

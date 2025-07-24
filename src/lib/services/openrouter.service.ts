@@ -1,3 +1,4 @@
+import { injectable } from "tsyringe";
 import axios, { type AxiosInstance, type AxiosError, type AxiosResponse } from "axios";
 import type {
   OpenRouterConfig,
@@ -13,6 +14,7 @@ import { ApiError } from "../errors";
  * Service for communication with OpenRouter API
  * Provides secure communication, error handling and retry logic
  */
+@injectable()
 export class OpenRouterService {
   private apiKey: string;
   private baseUrl: string;

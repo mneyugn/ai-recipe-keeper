@@ -1,3 +1,4 @@
+import { injectable, inject } from "tsyringe";
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { Database, Json } from "../../db/database.types";
@@ -30,8 +31,9 @@ Return JSON response following the schema EXACTLY.`;
  * Service responsible for extracting recipe data from various sources (text, URL)
  * Includes rate limiting and database logging functionality
  */
+@injectable()
 export class RecipeExtractionService {
-  constructor(public openRouterService: OpenRouterService) {}
+  constructor(@inject("OpenRouterService") public openRouterService: OpenRouterService) {}
 
   /**
    * Logs extraction attempt to database
