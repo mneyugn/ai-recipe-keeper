@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import type { SupabaseClient } from "../../db/supabase.client";
+import type { SupabaseClient } from "../../../db/supabase.client";
 import type {
   RecipeListResponseDTO,
   RecipeDetailDTO,
@@ -8,9 +8,9 @@ import type {
   CreateRecipeCommand,
   UpdateRecipeCommand,
   PaginationDTO,
-} from "../../types";
-import type { TablesInsert, TablesUpdate } from "../../db/database.types";
-import type { ValidatedRecipeListParams, RecipeOwnershipCheck } from "../validations/recipe";
+} from "../../../types";
+import type { TablesInsert, TablesUpdate } from "../../../db/database.types";
+import type { ValidatedRecipeListParams, RecipeOwnershipCheck } from "../../validations/recipe";
 
 @injectable()
 export class RecipeService {

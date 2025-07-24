@@ -7,8 +7,10 @@ import { openRouterConfig, validateConfiguration } from "../config";
 // Import all services and controllers
 import { AuthService } from "../modules/auth/auth.service";
 import { AuthController } from "../modules/auth/auth.controller";
-import { RecipeService } from "../services/recipe.service";
-import { TagService } from "../services/tag.service";
+import { TagService } from "../modules/tag/tag.service";
+import { TagController } from "../modules/tag/tag.controller";
+import { RecipeService } from "../modules/recipe/recipe.service";
+import { RecipeController } from "../modules/recipe/recipe.controller";
 import { UserService } from "../services/user.service";
 import { OpenRouterService } from "../services/openrouter.service";
 import { RecipeExtractionService } from "../services/recipe-extraction.service";
@@ -39,6 +41,8 @@ function configureGlobalDependencies(): void {
   // Register controllers
   // Controllers are instantiated per-request, so we register the class
   container.register("AuthController", { useClass: AuthController });
+  container.register("TagController", { useClass: TagController });
+  container.register("RecipeController", { useClass: RecipeController });
 }
 
 /**

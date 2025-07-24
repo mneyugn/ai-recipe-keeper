@@ -1,6 +1,6 @@
 import { injectable, inject } from "tsyringe";
-import type { SupabaseClient } from "../../db/supabase.client";
-import type { TagDTO } from "../../types";
+import type { SupabaseClient } from "../../../db/supabase.client";
+import type { TagDTO } from "../../../types";
 
 @injectable()
 export class TagService {

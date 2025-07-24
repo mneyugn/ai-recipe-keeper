@@ -15,8 +15,7 @@ export const urlScraperService = new UrlScraperService(openRouterService);
 
 // Export classes for DI container
 export { OpenRouterService, RecipeExtractionService, UrlScraperService };
-export { RecipeService } from "./recipe.service";
-export { TagService } from "./tag.service";
+
 export { UserService } from "./user.service";
 
 // Re-export DI container utilities

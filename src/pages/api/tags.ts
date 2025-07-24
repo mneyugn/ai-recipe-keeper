@@ -1,31 +1,12 @@
 import type { APIRoute } from "astro";
-import { TagService } from "../../lib/services/tag.service";
-import type { TagListResponseDTO } from "../../types";
-import { ApiError } from "../../lib/errors";
+import { createRequestContainer } from "../../lib/core/container";
+import { TagController } from "../../lib/modules/tag/tag.controller";
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals }) => {
-  try {
-    // initialize TagService with Supabase client from context.locals
-    const tagService = new TagService(locals.supabase);
+export const GET: APIRoute = async (context) => {
+  const container = createRequestContainer(context);
+  const tagController = container.resolve(TagController);
 
-    // fetch active tags
-    const tags = await tagService.getActiveTags();
-
-    // prepare response
-    const response: TagListResponseDTO = {
-      tags,
-    };
-
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  } catch (error) {
-    console.error("GET /api/tags: Error occurred:", error);
-    throw new ApiError(500, "Failed to fetch tags. Please try again later.", "DATABASE_ERROR");
-  }
+  return tagController.getTags(context);
 };
