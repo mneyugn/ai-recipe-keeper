@@ -3,10 +3,9 @@ import type { APIContext } from "astro";
 import { z } from "zod";
 import { ApiError } from "../../errors";
 import { success } from "../../api/responses";
-import { extractFromTextSchema } from "../../validations/recipe-extraction";
+import { extractFromTextSchema } from "./extraction.validation";
 import { SUPPORTED_URL_DOMAINS } from "../../constants";
-import type { ExtractionService } from "./extraction.service";
-import type { UrlScraperService } from "./url-scraper.service";
+import type { ExtractionService, UrlScraperService } from ".";
 import type { ExtractFromUrlResponseDTO, ExtractFromTextResponseDTO } from "../../../types";
 
 const extractFromUrlSchema = z.object({

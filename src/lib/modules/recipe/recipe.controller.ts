@@ -8,7 +8,7 @@ import {
   validateRecipeId,
   validateCreateRecipeCommand,
   validateUpdateRecipeCommand,
-} from "../../validations/recipe";
+} from "./recipe.validation";
 import { ApiError } from "../../errors";
 import { ZodError } from "zod";
 

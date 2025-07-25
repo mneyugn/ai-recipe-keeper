@@ -4,7 +4,7 @@ import type {
   RegisterFormData,
   ResetRequestFormData,
   ResetConfirmFormData,
-} from "../validations/auth.validation";
+} from "../modules/auth/auth.validation";
 
 interface AuthResponse {
   success?: boolean;

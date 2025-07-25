@@ -2,12 +2,7 @@ import "reflect-metadata";
 import { inject, injectable } from "tsyringe";
 import type { APIContext } from "astro";
 import type { SupabaseClient } from "../../../db/supabase.client";
-import {
-  type LoginFormData,
-  type RegisterFormData,
-  loginSchema,
-  registerSchema,
-} from "../../validations/auth.validation";
+import { type LoginFormData, type RegisterFormData, loginSchema, registerSchema } from "./auth.validation";
 import { ApiError } from "../../errors";
 import { fromZodError } from "zod-validation-error";
 import { created, success } from "../../api/responses";

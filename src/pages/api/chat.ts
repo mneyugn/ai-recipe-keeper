@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { openRouterService } from "../../lib/services";
+import { openRouterService } from "../../lib/core";
 import type { ChatCompletionRequest } from "../../types";
 import { ApiError } from "../../lib/errors";
 

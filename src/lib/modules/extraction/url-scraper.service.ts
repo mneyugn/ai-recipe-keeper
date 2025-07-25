@@ -1,8 +1,8 @@
 import { injectable, inject } from "tsyringe";
 import type { ExtractionValidationResult } from "../../../types";
-import type { OpenRouterService } from "../../services/openrouter.service";
+import type { OpenRouterService } from "../../core/openrouter.service";
 import type { ChatCompletionRequest, ResponseFormat } from "../../../types";
-import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "../../validations/recipe.validation";
+import { RECIPE_EXTRACTION_SCHEMA, validateExtractedData } from "./extraction.validation";
 import type { ExtractedRecipeDataDTO } from "../../../types";
 
 /**

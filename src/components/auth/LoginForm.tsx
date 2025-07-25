@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { FloatingInput } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthErrorAlert } from "./AuthErrorAlert";
-import { authService } from "@/lib/services/auth.service";
-import { loginSchema, type LoginFormData } from "@/lib/validations/auth.validation";
+import { authService } from "@/lib/api/auth.client";
+import { loginSchema, type LoginFormData } from "@/lib/modules/auth/auth.validation";
 import { z } from "zod";
 
 interface LoginFormProps {

@@ -10,7 +10,7 @@ import type {
   PaginationDTO,
 } from "../../../types";
 import type { TablesInsert, TablesUpdate } from "../../../db/database.types";
-import type { ValidatedRecipeListParams, RecipeOwnershipCheck } from "../../validations/recipe";
+import type { ValidatedRecipeListParams, RecipeOwnershipCheck } from "./recipe.validation";
 
 @injectable()
 export class RecipeService {

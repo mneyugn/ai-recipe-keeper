@@ -5,18 +5,12 @@ import { createSupabaseServerInstance } from "../../db/supabase.client";
 import { openRouterConfig, validateConfiguration } from "../config";
 
 // Import all services and controllers
-import { AuthService } from "../modules/auth/auth.service";
-import { AuthController } from "../modules/auth/auth.controller";
-import { TagService } from "../modules/tag/tag.service";
-import { TagController } from "../modules/tag/tag.controller";
-import { RecipeService } from "../modules/recipe/recipe.service";
-import { RecipeController } from "../modules/recipe/recipe.controller";
-import { UserService } from "../modules/user/user.service";
-import { UserController } from "../modules/user/user.controller";
-import { OpenRouterService } from "../services/openrouter.service";
-import { ExtractionService } from "../modules/extraction/extraction.service";
-import { UrlScraperService } from "../modules/extraction/url-scraper.service";
-import { ExtractionController } from "../modules/extraction/extraction.controller";
+import { AuthService, AuthController } from "../modules/auth";
+import { TagService, TagController } from "../modules/tag";
+import { RecipeService, RecipeController } from "../modules/recipe";
+import { UserService, UserController } from "../modules/user";
+import { OpenRouterService } from "./openrouter.service";
+import { ExtractionService, UrlScraperService, ExtractionController } from "../modules/extraction";
 
 /**
  * Configures and registers all services in the DI container.

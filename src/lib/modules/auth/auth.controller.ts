@@ -3,7 +3,7 @@ import { inject, injectable } from "tsyringe";
 import type { APIContext } from "astro";
 import type { IAuthService } from "./auth.service";
 import { withErrorHandler } from "../../api/middleware/errorHandler";
-import type { LoginFormData, RegisterFormData } from "../../validations/auth.validation";
+import type { LoginFormData, RegisterFormData } from "./auth.validation";
 
 @injectable()
 export class AuthController {

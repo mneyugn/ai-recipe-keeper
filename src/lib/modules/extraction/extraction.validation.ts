@@ -1,6 +1,14 @@
 import { z } from "zod";
-import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../types";
-import { ALLOWED_TAGS } from "../constants";
+import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../../types";
+import { ALLOWED_TAGS } from "../../constants";
+
+/**
+ * Validation schema for extracting recipe from text.
+ * Checks for the presence of the text field and its length (max 10,000 characters).
+ */
+export const extractFromTextSchema = z.object({
+  text: z.string().min(1, "The 'text' field is required").max(10000, "Text cannot exceed 10,000 characters").trim(),
+});
 
 /**
  * Zod schema for validating the structured recipe data returned by the AI model.
@@ -139,3 +147,8 @@ export function validateExtractedData(data: unknown): ExtractionValidationResult
     hasErrors: true, // failure implies critical errors
   };
 }
+
+/**
+ * Type for validated extract-from-text request body
+ */
+export type ExtractFromTextInput = z.infer<typeof extractFromTextSchema>;

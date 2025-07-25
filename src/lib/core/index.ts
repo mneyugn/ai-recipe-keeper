@@ -1,16 +1,16 @@
-// Legacy exports for backward compatibility during transition
-// Most services have been migrated to the new module structure
+// Core services and utilities
 
 import { openRouterConfig, validateConfiguration } from "../config";
 import { OpenRouterService } from "./openrouter.service";
 
-// Initialize main service that remains in services (shared service)
+// Initialize configuration validation
 validateConfiguration();
 
+// Export the main OpenRouter service instance (for legacy compatibility)
 export const openRouterService = new OpenRouterService(openRouterConfig);
 
 // Export classes for DI container
 export { OpenRouterService };
 
 // Re-export DI container utilities
-export { getService, createRequestContainer } from "../core/container";
+export { getService, createRequestContainer } from "./container";
