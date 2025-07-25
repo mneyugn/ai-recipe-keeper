@@ -62,7 +62,7 @@ export interface RecipeOwnershipCheck {
 // ===== Validation Helper Functions =====
 
 /**
- * Parsuje i waliduje query parametry dla listy przepisów
+ * Parse and validate query parameters for recipe list
  */
 export function validateRecipeListQuery(searchParams: URLSearchParams): ValidatedRecipeListParams {
   const rawParams = {
@@ -88,21 +88,21 @@ export function validateRecipeListQuery(searchParams: URLSearchParams): Validate
 }
 
 /**
- * Waliduje UUID przepisu
+ * Validate recipe ID
  */
 export function validateRecipeId(id: string): string {
   return uuidSchema.parse(id);
 }
 
 /**
- * Waliduje dane do tworzenia przepisu
+ * Validate create recipe command
  */
 export function validateCreateRecipeCommand(data: unknown) {
   return createRecipeCommandSchema.parse(data);
 }
 
 /**
- * Waliduje dane do aktualizacji przepisu
+ * Validate update recipe command
  */
 export function validateUpdateRecipeCommand(data: unknown) {
   return updateRecipeCommandSchema.parse(data);

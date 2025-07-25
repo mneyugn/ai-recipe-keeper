@@ -10,15 +10,13 @@ export class AuthController {
   constructor(@inject("IAuthService") private authService: IAuthService) {}
 
   public login = withErrorHandler(async (context: APIContext) => {
-    const formData = await context.request.formData();
-    const data = Object.fromEntries(formData) as LoginFormData;
+    const data = (await context.request.json()) as LoginFormData;
     const response = await this.authService.login(context, data);
     return response;
   });
 
   public register = withErrorHandler(async (context: APIContext) => {
-    const formData = await context.request.formData();
-    const data = Object.fromEntries(formData) as RegisterFormData;
+    const data = (await context.request.json()) as RegisterFormData;
     const response = await this.authService.register(context, data);
     return response;
   });
