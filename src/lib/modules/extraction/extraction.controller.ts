@@ -1,31 +1,11 @@
 import { injectable, inject } from "tsyringe";
 import type { APIContext } from "astro";
-import { z } from "zod";
 import { ApiError } from "../../errors";
 import { success } from "../../api/responses";
-import { extractFromTextSchema } from "./extraction.validation";
-import { SUPPORTED_URL_DOMAINS } from "../../constants";
+import { extractFromTextSchema, extractFromUrlSchema } from "./extraction.validation";
 import type { ExtractionService, UrlScraperService } from ".";
 import type { ExtractFromUrlResponseDTO, ExtractFromTextResponseDTO } from "../../../types";
-
-const extractFromUrlSchema = z.object({
-  url: z
-    .string()
-    .url("Invalid URL format")
-    .refine(
-      (url) => {
-        try {
-          const parsedUrl = new URL(url);
-          return SUPPORTED_URL_DOMAINS.some((domain) => parsedUrl.hostname.endsWith(domain));
-        } catch {
-          return false;
-        }
-      },
-      {
-        message: `URL must be from a supported domain: ${SUPPORTED_URL_DOMAINS.join(", ")}`,
-      }
-    ),
-});
+import { withErrorHandler } from "../../api/middleware/errorHandler";
 
 /**
  * Controller handling extraction-related HTTP operations
@@ -41,7 +21,7 @@ export class ExtractionController {
    * POST /api/recipe/extract-from-url
    * Extracts recipe data from a supported URL using web scraping and AI
    */
-  async extractFromUrl(context: APIContext): Promise<Response> {
+  extractFromUrl = withErrorHandler(async (context: APIContext): Promise<Response> => {
     const userId = context.locals.user?.id;
     if (!userId) {
       throw new ApiError(401, "Authentication required.", "AUTH_REQUIRED");
@@ -115,13 +95,13 @@ export class ExtractionController {
     };
 
     return success(response);
-  }
+  });
 
   /**
    * POST /api/recipe/extract-from-text
    * Extracts recipe data from unstructured text using AI and returns structured data
    */
-  async extractFromText(context: APIContext): Promise<Response> {
+  extractFromText = withErrorHandler(async (context: APIContext): Promise<Response> => {
     // 1. Check authentication
     const userId = context.locals.user?.id;
     if (!userId) {
@@ -202,5 +182,5 @@ export class ExtractionController {
     };
 
     return success(response);
-  }
+  });
 }

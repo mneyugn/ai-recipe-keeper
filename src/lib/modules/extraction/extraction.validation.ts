@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ExtractedRecipeDataDTO, ExtractionValidationResult } from "../../../types";
-import { ALLOWED_TAGS } from "../../constants";
+import { ALLOWED_TAGS, SUPPORTED_URL_DOMAINS } from "../../constants";
 
 /**
  * Validation schema for extracting recipe from text.
@@ -8,6 +8,25 @@ import { ALLOWED_TAGS } from "../../constants";
  */
 export const extractFromTextSchema = z.object({
   text: z.string().min(1, "The 'text' field is required").max(10000, "Text cannot exceed 10,000 characters").trim(),
+});
+
+export const extractFromUrlSchema = z.object({
+  url: z
+    .string()
+    .url("Invalid URL format")
+    .refine(
+      (url) => {
+        try {
+          const parsedUrl = new URL(url);
+          return SUPPORTED_URL_DOMAINS.some((domain) => parsedUrl.hostname.endsWith(domain));
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: `URL must be from a supported domain: ${SUPPORTED_URL_DOMAINS.join(", ")}`,
+      }
+    ),
 });
 
 /**
