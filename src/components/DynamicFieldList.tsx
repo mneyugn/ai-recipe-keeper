@@ -109,6 +109,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
               rows={textareaRows}
               className="border-0 p-0 focus-visible:ring-0 resize-none bg-transparent"
               maxLength={maxCharsPerItem}
+              data-testid={`${testId}-textarea-${index}`}
             />
           ) : (
             <Input
@@ -118,6 +119,7 @@ const SortableItem: React.FC<SortableItemProps> = ({
               placeholder={fieldPlaceholder}
               className="border-0 p-0 focus-visible:ring-0 bg-transparent"
               maxLength={maxCharsPerItem}
+              data-testid={`${testId}-input-${index}`}
             />
           )}
         </div>

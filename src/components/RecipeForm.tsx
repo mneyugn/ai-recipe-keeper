@@ -673,13 +673,17 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipeData, mode, recipeId }) =
           )}
         </TabsContent>
 
-        <TabsContent value="manual" className="mt-6">
+        <TabsContent value="manual" className="mt-6" data-testid="manual-mode-content">
           <RecipeFormFields {...{ formData, formErrors, handleInputChange, setFormData, availableTags }} />
         </TabsContent>
       </Tabs>
 
       {formErrors.api && (
-        <div data-error="api" className="rounded-md bg-destructive/10 p-4 border border-destructive/20">
+        <div
+          data-error="api"
+          className="rounded-md bg-destructive/10 p-4 border border-destructive/20"
+          data-testid="api-error"
+        >
           <p className="text-sm font-medium text-destructive">{formErrors.api}</p>
         </div>
       )}
